@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Live Stream</title>
+<title>RAMAYANA - Live Stream</title>
 
 <style>
 * {
@@ -37,7 +37,7 @@ video {
     background: #000;
 }
 
-/* TOP GRADIENT */
+/* TOP GRADIENT & BRANDING */
 .top-gradient {
     position: absolute;
     top: 0;
@@ -51,6 +51,20 @@ video {
     );
     pointer-events: none;
     z-index: 5;
+}
+
+.brand-title {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 30;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #D4AF37;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    pointer-events: none;
 }
 
 /* SETTINGS BUTTON */
@@ -88,9 +102,10 @@ video {
 }
 
 .top-settings-btn:hover {
-    background: rgba(180,20,35,.9);
-    border-color: rgba(255,70,80,.7);
-    box-shadow: 0 5px 22px rgba(190,25,35,.25);
+    background: rgba(212,175,55,.9);
+    border-color: rgba(255,215,0,.7);
+    box-shadow: 0 5px 22px rgba(212,175,55,.25);
+    color: #000;
 }
 
 .top-settings-btn:hover svg {
@@ -164,18 +179,18 @@ video {
 }
 
 .speed-option:hover {
-    background: rgba(190,25,35,.17);
+    background: rgba(212,175,55,.17);
     color: #fff;
 }
 
 .speed-option.selected {
-    color: #ff4653;
-    background: rgba(190,25,35,.13);
+    color: #D4AF37;
+    background: rgba(212,175,55,.13);
 }
 
 .speed-option .check {
     opacity: 0;
-    color: #ff4653;
+    color: #D4AF37;
 }
 
 .speed-option.selected .check {
@@ -208,14 +223,15 @@ video {
 }
 
 .center-play:hover {
-    background: rgba(180,20,35,.9);
+    background: rgba(212,175,55,.9);
+    color: #000;
     transform: translate(-50%,-50%) scale(1.08);
 }
 
 .center-play svg {
     width: 27px;
     height: 27px;
-    fill: white;
+    fill: currentColor;
 }
 
 /* BOTTOM CONTROLS */
@@ -261,7 +277,7 @@ video {
     position: absolute;
     height: 100%;
     width: 0%;
-    background: #e32636;
+    background: #D4AF37;
     border-radius: 20px;
 }
 
@@ -272,11 +288,11 @@ video {
     width: 13px;
     height: 13px;
     background: #fff;
-    border: 2px solid #e32636;
+    border: 2px solid #D4AF37;
     border-radius: 50%;
     transform: translate(-50%,-50%) scale(0);
     transition: transform .15s ease;
-    box-shadow: 0 0 8px rgba(227,38,54,.5);
+    box-shadow: 0 0 8px rgba(212,175,55,.5);
 }
 
 .timeline:hover {
@@ -320,7 +336,7 @@ video {
 }
 
 .control-btn:hover {
-    color: #ff4653;
+    color: #D4AF37;
     background: rgba(255,255,255,.08);
 }
 
@@ -351,7 +367,7 @@ video {
     background: rgba(255,255,255,.35);
     border-radius: 20px;
     cursor: pointer;
-    accent-color: #e32636;
+    accent-color: #D4AF37;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -365,15 +381,117 @@ video {
 /* AUTO HIDE */
 .top-gradient,
 .top-settings-btn,
+.brand-title,
 .bottom-controls {
     transition: opacity .3s ease;
 }
 
 .player.hide-controls .bottom-controls,
 .player.hide-controls .top-gradient,
-.player.hide-controls .top-settings-btn {
+.player.hide-controls .top-settings-btn,
+.player.hide-controls .brand-title {
     opacity: 0;
     pointer-events: none;
+}
+
+/* POPUPS STYLING */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.popup-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* POPUP 1 (Normal Center Position) */
+.popup-box-1 {
+    width: 90%;
+    max-width: 320px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 22px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* POPUP 2 (1 cm / ~38px Left Shifted) */
+.popup-box-2 {
+    width: 90%;
+    max-width: 320px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 22px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform: translateX(-38px); /* 1 cm left shifted */
+}
+
+.popup-box h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.popup-box p {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.pop-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s ease;
+}
+
+.pop-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ddd;
+}
+
+.pop-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.pop-join {
+    background: #D4AF37;
+    color: #000;
+    font-weight: 600;
+}
+
+.pop-join:hover {
+    background: #e6c555;
 }
 
 /* RESPONSIVE */
@@ -384,6 +502,12 @@ video {
         width: 40px;
         height: 40px;
         border-radius: 12px;
+    }
+
+    .brand-title {
+        top: 15px;
+        left: 14px;
+        font-size: 14px;
     }
 
     .settings-menu {
@@ -435,57 +559,33 @@ video {
 
 <div class="player" id="player">
 
-    <video id="video" playsinline preload="metadata">
+    <video id="video" playsinline webkit-playsinline preload="auto">
         <source
             src="https://filetolinkkk-77971a19d2f8.herokuapp.com/38689/Pyre+%282026%29+Hindi+HDTC+1080p+x264+AAC+HC-ESub+%28%40MHBD_Mov.mkv?hash=AgADhy"
             type="video/x-matroska">
     </video>
 
     <div class="top-gradient"></div>
+    <div class="brand-title">Ramayana</div>
 
     <!-- TOP RIGHT SETTINGS -->
-    <button class="top-settings-btn" id="settingsBtn"
-        aria-label="Player settings">
-
+    <button class="top-settings-btn" id="settingsBtn" aria-label="Player settings">
         <svg viewBox="0 0 24 24" fill="none">
             <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
-            <path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/>
+            <path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l-.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l-.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/>
         </svg>
     </button>
 
     <!-- SETTINGS MENU -->
     <div class="settings-menu" id="settingsMenu">
-
         <div class="menu-heading">Playback speed</div>
-
-        <button class="speed-option" data-speed="0.5">
-            0.5x <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option" data-speed="0.75">
-            0.75x <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option selected" data-speed="1">
-            Normal <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option" data-speed="1.25">
-            1.25x <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option" data-speed="1.5">
-            1.5x <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option" data-speed="1.75">
-            1.75x <span class="check">✓</span>
-        </button>
-
-        <button class="speed-option" data-speed="2">
-            2x <span class="check">✓</span>
-        </button>
-
+        <button class="speed-option" data-speed="0.5">0.5x <span class="check">✓</span></button>
+        <button class="speed-option" data-speed="0.75">0.75x <span class="check">✓</span></button>
+        <button class="speed-option selected" data-speed="1">Normal <span class="check">✓</span></button>
+        <button class="speed-option" data-speed="1.25">1.25x <span class="check">✓</span></button>
+        <button class="speed-option" data-speed="1.5">1.5x <span class="check">✓</span></button>
+        <button class="speed-option" data-speed="1.75">1.75x <span class="check">✓</span></button>
+        <button class="speed-option" data-speed="2">2x <span class="check">✓</span></button>
     </div>
 
     <!-- CENTER PLAY -->
@@ -497,7 +597,6 @@ video {
 
     <!-- BOTTOM CONTROLS -->
     <div class="bottom-controls">
-
         <div class="timeline" id="timeline">
             <div class="timeline-buffer" id="buffer"></div>
             <div class="timeline-progress" id="progress"></div>
@@ -505,57 +604,60 @@ video {
         </div>
 
         <div class="control-row">
-
             <div class="left-controls">
-
                 <button class="control-btn" id="playBtn">
                     <svg viewBox="0 0 24 24" id="playIcon">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
                 </button>
-
                 <div class="volume-box">
-
                     <button class="control-btn" id="muteBtn">
                         <svg viewBox="0 0 24 24" id="volumeIcon">
                             <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12z"/>
                         </svg>
                     </button>
-
-                    <input
-                        type="range"
-                        class="volume-slider"
-                        id="volumeSlider"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value="1">
-
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1">
                 </div>
-
                 <div class="time-display">
-                    <span id="currentTime">00:00</span>
-                    /
-                    <span id="duration">00:00</span>
+                    <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
                 </div>
-
             </div>
 
             <div class="right-controls">
-
                 <button class="control-btn" id="fullscreenBtn">
                     <svg viewBox="0 0 24 24">
                         <path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v6h-6v-2h4v-4z"/>
                     </svg>
                 </button>
-
             </div>
-
         </div>
     </div>
 
 </div>
 
+<!-- POPUP 1 (Normal Center Position) -->
+<div class="popup-overlay" id="popup1">
+    <div class="popup-box popup-box-1">
+        <h3>Join Telegram Channel</h3>
+        <p>Get latest updates directly on Telegram.</p>
+        <div class="popup-buttons">
+            <button class="pop-btn pop-cancel" id="cancel1">Cancel</button>
+            <button class="pop-btn pop-join" id="join1">Join</button>
+        </div>
+    </div>
+</div>
+
+<!-- POPUP 2 (1 cm Left Shifted from Popup 1) -->
+<div class="popup-overlay" id="popup2">
+    <div class="popup-box popup-box-2">
+        <h3>Join Backup Channel</h3>
+        <p>Never miss a live stream link.</p>
+        <div class="popup-buttons">
+            <button class="pop-btn pop-cancel" id="cancel2">Cancel</button>
+            <button class="pop-btn pop-join" id="join2">Join</button>
+        </div>
+    </div>
+</div>
 <script>
 const player = document.getElementById("player");
 const video = document.getElementById("video");
@@ -774,12 +876,32 @@ document.addEventListener("click", event => {
     }
 });
 
-/* FULLSCREEN */
-fullscreenBtn.addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-        player.requestFullscreen?.();
-    } else {
-        document.exitFullscreen?.();
+/* FULLSCREEN & AUTO-ROTATE LANDSCAPE */
+fullscreenBtn.addEventListener("click", async () => {
+    try {
+        if (!document.fullscreenElement) {
+            if (player.requestFullscreen) {
+                await player.requestFullscreen();
+            } else if (player.webkitRequestFullscreen) {
+                player.webkitRequestFullscreen();
+            }
+            
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock("landscape").catch(() => {});
+            }
+        } else {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        }
+    } catch (err) {
+        console.log(err);
     }
 });
 
@@ -854,17 +976,32 @@ document.addEventListener("keydown", event => {
 updatePlayIcons();
 updateVolumeIcon();
 
-/* TELEGRAM JOIN POPUP (Browser Native) */
+/* POPUP MANAGEMENT (Aapke mutabiq 2 popups) */
 const telegramLink = "https://t.me/YOUR_CHANNEL";
+const popup1 = document.getElementById("popup1");
+const popup2 = document.getElementById("popup2");
 
 window.addEventListener("load", () => {
     setTimeout(() => {
-        const joinTelegram = confirm("Join Our Telegram Channel");
-
-        if (joinTelegram) {
-            window.location.href = telegramLink;
-        }
+        // Filhal pehla popup open hoga (Normal Position)
+        popup1.classList.add("show");
     }, 1200);
+});
+
+// Popup 1 Actions
+document.getElementById("cancel1").addEventListener("click", () => {
+    popup1.classList.remove("show");
+});
+document.getElementById("join1").addEventListener("click", () => {
+    window.location.href = telegramLink;
+});
+
+// Popup 2 Actions (Agar kabhi second popup open karna ho)
+document.getElementById("cancel2").addEventListener("click", () => {
+    popup2.classList.remove("show");
+});
+document.getElementById("join2").addEventListener("click", () => {
+    window.location.href = telegramLink;
 });
 </script>
 
