@@ -67,17 +67,25 @@ video {
     pointer-events: none;
 }
 
-/* SETTINGS BUTTON */
-.top-settings-btn {
+/* TOP BUTTONS CONTAINER */
+.top-right-controls {
     position: absolute;
     top: 18px;
     right: 18px;
-    width: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 30;
+}
+
+/* TOP CONTROLS BUTTONS (Parts & Settings) */
+.top-icon-btn {
     height: 44px;
+    padding: 0 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 30;
+    gap: 6px;
 
     border: 1px solid rgba(255,255,255,.14);
     border-radius: 14px;
@@ -87,11 +95,18 @@ video {
 
     color: #fff;
     cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
 
     transition: .3s ease;
 }
 
-.top-settings-btn svg {
+.top-icon-btn.settings-icon-btn {
+    width: 44px;
+    padding: 0;
+}
+
+.top-icon-btn svg {
     width: 21px;
     height: 21px;
     stroke: currentColor;
@@ -101,32 +116,32 @@ video {
     transition: transform .55s cubic-bezier(.2,.8,.2,1);
 }
 
-.top-settings-btn:hover {
+.top-icon-btn:hover {
     background: rgba(212,175,55,.9);
     border-color: rgba(255,215,0,.7);
     box-shadow: 0 5px 22px rgba(212,175,55,.25);
     color: #000;
 }
 
-.top-settings-btn:hover svg {
+.top-icon-btn:hover svg {
     transform: rotate(75deg);
 }
 
-.top-settings-btn.active svg {
+.top-icon-btn.active svg {
     transform: rotate(90deg);
 }
 
-.top-settings-btn:active {
+.top-icon-btn:active {
     transform: scale(.92);
 }
 
-/* SETTINGS MENU */
-.settings-menu {
+/* DROPDOWN MENUS */
+.dropdown-menu {
     position: absolute;
-    top: 72px;
-    right: 18px;
-    width: 190px;
-    padding: 12px;
+    top: 60px;
+    right: 0;
+    width: 170px;
+    padding: 10px;
 
     border: 1px solid rgba(255,255,255,.12);
     border-radius: 15px;
@@ -147,7 +162,7 @@ video {
         visibility .22s;
 }
 
-.settings-menu.show {
+.dropdown-menu.show {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
@@ -161,9 +176,9 @@ video {
     padding: 3px 7px 10px;
 }
 
-.speed-option {
+.menu-option {
     width: 100%;
-    padding: 11px 9px;
+    padding: 10px 9px;
     border: none;
     border-radius: 9px;
     background: transparent;
@@ -178,22 +193,23 @@ video {
     transition: .2s ease;
 }
 
-.speed-option:hover {
+.menu-option:hover {
     background: rgba(212,175,55,.17);
     color: #fff;
 }
 
-.speed-option.selected {
+.menu-option.selected {
     color: #D4AF37;
     background: rgba(212,175,55,.13);
+    font-weight: 600;
 }
 
-.speed-option .check {
+.menu-option .check {
     opacity: 0;
     color: #D4AF37;
 }
 
-.speed-option.selected .check {
+.menu-option.selected .check {
     opacity: 1;
 }
 
@@ -380,7 +396,7 @@ video {
 
 /* AUTO HIDE */
 .top-gradient,
-.top-settings-btn,
+.top-right-controls,
 .brand-title,
 .bottom-controls {
     transition: opacity .3s ease;
@@ -388,7 +404,7 @@ video {
 
 .player.hide-controls .bottom-controls,
 .player.hide-controls .top-gradient,
-.player.hide-controls .top-settings-btn,
+.player.hide-controls .top-right-controls,
 .player.hide-controls .brand-title {
     opacity: 0;
     pointer-events: none;
@@ -396,12 +412,22 @@ video {
 
 /* RESPONSIVE */
 @media (max-width: 600px) {
-    .top-settings-btn {
+    .top-right-controls {
         top: 12px;
         right: 12px;
-        width: 40px;
+        gap: 8px;
+    }
+
+    .top-icon-btn {
         height: 40px;
+        padding: 0 10px;
         border-radius: 12px;
+        font-size: 12px;
+    }
+
+    .top-icon-btn.settings-icon-btn {
+        width: 40px;
+        padding: 0;
     }
 
     .brand-title {
@@ -410,9 +436,8 @@ video {
         font-size: 14px;
     }
 
-    .settings-menu {
-        top: 62px;
-        right: 12px;
+    .dropdown-menu {
+        top: 52px;
     }
 
     .bottom-controls {
@@ -460,32 +485,57 @@ video {
 <div class="player" id="player">
 
     <video id="video" playsinline webkit-playsinline preload="auto">
-        <source
-            src="https://filetolinkkk-77971a19d2f8.herokuapp.com/39766/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part001.mkv?hash=AgADFS"
-            type="video/x-matroska">
+        <source id="videoSource" src="https://filetolinkkk-77971a19d2f8.herokuapp.com/39766/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part001.mkv?hash=AgADFS" type="video/x-matroska">
     </video>
 
     <div class="top-gradient"></div>
     <div class="brand-title">Ramayana</div>
 
-    <!-- TOP RIGHT SETTINGS -->
-    <button class="top-settings-btn" id="settingsBtn" aria-label="Player settings">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
-            <path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l-.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l-.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/>
-        </svg>
-    </button>
+    <!-- TOP RIGHT CONTROLS CONTAINER -->
+    <div class="top-right-controls">
 
-    <!-- SETTINGS MENU -->
-    <div class="settings-menu" id="settingsMenu">
-        <div class="menu-heading">Playback speed</div>
-        <button class="speed-option" data-speed="0.5">0.5x <span class="check">✓</span></button>
-        <button class="speed-option" data-speed="0.75">0.75x <span class="check">✓</span></button>
-        <button class="speed-option selected" data-speed="1">Normal <span class="check">✓</span></button>
-        <button class="speed-option" data-speed="1.25">1.25x <span class="check">✓</span></button>
-        <button class="speed-option" data-speed="1.5">1.5x <span class="check">✓</span></button>
-        <button class="speed-option" data-speed="1.75">1.75x <span class="check">✓</span></button>
-        <button class="speed-option" data-speed="2">2x <span class="check">✓</span></button>
+        <!-- PARTS BUTTON -->
+        <div style="position: relative;">
+            <button class="top-icon-btn" id="partsBtn" aria-label="Select Part">
+                <span>Part 1</span>
+                <svg viewBox="0 0 24 24" fill="none" style="width: 14px; height: 14px;">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+
+            <!-- PARTS MENU -->
+            <div class="dropdown-menu" id="partsMenu">
+                <div class="menu-heading">Select Part</div>
+                <button class="menu-option selected" data-part="1" data-url="https://filetolinkkk-77971a19d2f8.herokuapp.com/39766/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part001.mkv?hash=AgADFS">Part 1 <span class="check">✓</span></button>
+                <button class="menu-option" data-part="2" data-url="https://filetolinkkk-77971a19d2f8.herokuapp.com/39798/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part002.mkv?hash=AgADFy">Part 2 <span class="check">✓</span></button>
+                <button class="menu-option" data-part="3" data-url="https://filetolinkkk-77971a19d2f8.herokuapp.com/39800/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part003.mkv?hash=AgADGS">Part 3 <span class="check">✓</span></button>
+                <button class="menu-option" data-part="4" data-url="https://filetolinkkk-77971a19d2f8.herokuapp.com/39804/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part004.mkv?hash=AgADHC">Part 4 <span class="check">✓</span></button>
+                <button class="menu-option" data-part="5" data-url="https://filetolinkkk-77971a19d2f8.herokuapp.com/39802/Ramayana.2026.HQ.1080p.HDTC.Hindi-LiNE.x264-PrimeXOf.part005.mkv?hash=AgADHS">Part 5 <span class="check">✓</span></button>
+            </div>
+        </div>
+
+        <!-- SETTINGS BUTTON -->
+        <div style="position: relative;">
+            <button class="top-icon-btn settings-icon-btn" id="settingsBtn" aria-label="Player settings">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+                    <path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l-.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/>
+                </svg>
+            </button>
+
+            <!-- SETTINGS MENU -->
+            <div class="dropdown-menu" id="settingsMenu">
+                <div class="menu-heading">Playback speed</div>
+                <button class="menu-option" data-speed="0.5">0.5x <span class="check">✓</span></button>
+                <button class="menu-option" data-speed="0.75">0.75x <span class="check">✓</span></button>
+                <button class="menu-option selected" data-speed="1">Normal <span class="check">✓</span></button>
+                <button class="menu-option" data-speed="1.25">1.25x <span class="check">✓</span></button>
+                <button class="menu-option" data-speed="1.5">1.5x <span class="check">✓</span></button>
+                <button class="menu-option" data-speed="1.75">1.75x <span class="check">✓</span></button>
+                <button class="menu-option" data-speed="2">2x <span class="check">✓</span></button>
+            </div>
+        </div>
+
     </div>
 
     <!-- CENTER PLAY -->
@@ -537,6 +587,7 @@ video {
 <script>
 const player = document.getElementById("player");
 const video = document.getElementById("video");
+const videoSource = document.getElementById("videoSource");
 
 const playBtn = document.getElementById("playBtn");
 const centerPlay = document.getElementById("centerPlay");
@@ -560,6 +611,9 @@ const fullscreenBtn = document.getElementById("fullscreenBtn");
 
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
+
+const partsBtn = document.getElementById("partsBtn");
+const partsMenu = document.getElementById("partsMenu");
 
 let isDragging = false;
 let hideTimer;
@@ -716,25 +770,58 @@ function updateVolumeIcon() {
     }
 }
 
+/* PARTS SWITCHING */
+partsBtn.addEventListener("click", event => {
+    event.stopPropagation();
+    const isOpen = partsMenu.classList.toggle("show");
+    partsBtn.classList.toggle("active", isOpen);
+    settingsMenu.classList.remove("show");
+    settingsBtn.classList.remove("active");
+});
+
+document.querySelectorAll("#partsMenu .menu-option").forEach(option => {
+    option.addEventListener("click", () => {
+        const partNum = option.dataset.part;
+        const partUrl = option.dataset.url;
+
+        document.querySelectorAll("#partsMenu .menu-option")
+            .forEach(item => item.classList.remove("selected"));
+        option.classList.add("selected");
+
+        partsBtn.querySelector("span").textContent = `Part ${partNum}`;
+
+        // Change source and reload video
+        const currentPlaybackTime = video.currentTime;
+        const wasPlaying = !video.paused;
+
+        videoSource.src = partUrl;
+        video.load();
+        
+        if (wasPlaying) {
+            video.play().catch(() => {});
+        }
+
+        partsMenu.classList.remove("show");
+        partsBtn.classList.remove("active");
+    });
+});
+
 /* SETTINGS MENU */
 settingsBtn.addEventListener("click", event => {
     event.stopPropagation();
-
-    const isOpen =
-        settingsMenu.classList.toggle("show");
-
+    const isOpen = settingsMenu.classList.toggle("show");
     settingsBtn.classList.toggle("active", isOpen);
+    partsMenu.classList.remove("show");
+    partsBtn.classList.remove("active");
 });
 
-document.querySelectorAll(".speed-option").forEach(option => {
+document.querySelectorAll("#settingsMenu .menu-option").forEach(option => {
     option.addEventListener("click", () => {
         const speed = Number(option.dataset.speed);
-
         video.playbackRate = speed;
 
-        document.querySelectorAll(".speed-option")
+        document.querySelectorAll("#settingsMenu .menu-option")
             .forEach(item => item.classList.remove("selected"));
-
         option.classList.add("selected");
 
         settingsMenu.classList.remove("show");
@@ -742,11 +829,13 @@ document.querySelectorAll(".speed-option").forEach(option => {
     });
 });
 
+/* CLOSE MENUS ON OUTSIDE CLICK */
 document.addEventListener("click", event => {
-    if (
-        !settingsMenu.contains(event.target) &&
-        !settingsBtn.contains(event.target)
-    ) {
+    if (!partsMenu.contains(event.target) && !partsBtn.contains(event.target)) {
+        partsMenu.classList.remove("show");
+        partsBtn.classList.remove("active");
+    }
+    if (!settingsMenu.contains(event.target) && !settingsBtn.contains(event.target)) {
         settingsMenu.classList.remove("show");
         settingsBtn.classList.remove("active");
     }
@@ -784,12 +873,11 @@ fullscreenBtn.addEventListener("click", async () => {
 /* AUTO HIDE CONTROLS */
 function showControls() {
     player.classList.remove("hide-controls");
-
     clearTimeout(hideTimer);
 
     if (!video.paused) {
         hideTimer = setTimeout(() => {
-            if (!settingsMenu.classList.contains("show")) {
+            if (!settingsMenu.classList.contains("show") && !partsMenu.classList.contains("show")) {
                 player.classList.add("hide-controls");
             }
         }, 3500);
@@ -852,7 +940,7 @@ document.addEventListener("keydown", event => {
 updatePlayIcons();
 updateVolumeIcon();
 
-/* TELEGRAM JOIN POPUP (Browser Native Alert with Join Action) */
+/* TELEGRAM JOIN POPUP */
 const telegramLink = "https://t.me/+uPOAzD7_V2FhYzk1";
 
 window.addEventListener("load", () => {
