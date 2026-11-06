@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF2DA">
+<meta name="referrer" content="no-referrer">
+<title>FootxCrate — Live Sports Streaming</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.2.4/dist/controls.css">
+<script src="https://cdn.jwplayer.com/libraries/IDzF9Zmk.js"></script>
+
+<style>
+:root {
+  --bg-cream: #FBF2DA;
+  --bg-olive: #6A7357;
+  --card-white: #FFFFFF;
+  --text-main: #1A1A1A;
+  --text-muted: #555555;
+  --accent-teal: #0088cc;
+  --border-color: rgba(0, 0, 0, 0.1);
+
+  --bg: var(--bg-cream);
+  --surface: var(--card-white);
+  --surface-2: #F5EBD2;
+  --surface-3: #ECE1C3;
+  --border: var(--border-color);
+  --border-2: rgba(0, 0, 0, 0.2);
+  --text: var(--text-main);
+  --text-dim: var(--text-muted);
+  --muted: #666666;
+  --accent: var(--accent-teal);
+  --accent-2: #00aaff;
+  --accent-soft: rgba(0, 136, 204, 0.1);
+  --accent-glow: rgba(0, 136, 204, 0.2);
+  --live: #FF4D6D;
+  --live-soft: rgba(255, 77, 109, 0.12);
+  --soon: #D48806;
+  --soon-soft: rgba(212, 136, 6, 0.12);
+  --done: #6E7E94;
+  --done-soft: rgba(110, 126, 148, 0.12);
+  --radius: 10px;
+  --radius-md: 8px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.1);
+  --font-d: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-b: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font:400 15px/1.5 var(--font-b); color:var(--text); background:var(--bg);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+  padding-bottom:40px; position:relative; overflow-x:hidden;
+}
+
+body::before{
+  content:""; position:fixed; top:-30%; left:50%; transform:translateX(-50%);
+  width:900px; height:900px;
+  background:radial-gradient(circle,rgba(106,115,87,0.1),transparent 65%);
+  pointer-events:none; z-index:0;
+}
+body::after{
+  content:""; position:fixed; bottom:-40%; right:-10%; width:700px; height:700px;
+  background:radial-gradient(circle,rgba(0,136,204,0.05),transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--accent);text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+img{display:block;max-width:100%}
+[hidden]{display:none !important}
+
+.container{max-width:1320px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+.view{display:none}
+.view.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* --- Perfectly Theme-Matched & Silky Smooth Popup Styles --- */
+.overlay {
+  position: fixed; inset: 0; 
+  background: rgba(26, 26, 26, 0.55); 
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; z-index: 999999;
+  padding: 20px; opacity: 0; visibility: hidden; 
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.overlay.show { opacity: 1; visibility: visible; }
+
+.popup-card {
+  background: var(--bg-cream); 
+  border: 1.5px solid rgba(106, 115, 87, 0.25);
+  border-radius: 24px; padding: 32px 26px; width: 100%;
+  max-width: 400px; text-align: center; 
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15), 0 0 0 6px rgba(106, 115, 87, 0.05);
+  display: flex; flex-direction: column; gap: 14px; font-family: var(--font-b);
+  transform: scale(0.92) translateY(10px); 
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.overlay.show .popup-card {
+  transform: scale(1) translateY(0);
+}
+
+.popup-card h3 { 
+  font: 700 20px/1.2 var(--font-d); 
+  color: var(--text-main); 
+  letter-spacing: -0.01em;
+}
+.popup-card p { 
+  font-size: 13.5px; 
+  color: var(--text-muted); 
+  line-height: 1.5; 
+  font-weight: 500;
+}
+.popup-actions { 
+  display: flex; gap: 10px; margin-top: 6px; align-items: center; justify-content: center; 
+}
+.popup-btn-cancel {
+  background: var(--surface-2); 
+  color: var(--text-muted); 
+  border: 1px solid var(--border-2);
+  padding: 10px 16px; border-radius: 10px; 
+  font-weight: 600; font-size: 13px; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.popup-btn-cancel:hover {
+  background: var(--surface-3);
+  color: var(--text-main);
+}
+.popup-btn-join {
+  background: var(--bg-olive); 
+  color: var(--bg-cream); 
+  padding: 11px 20px; border-radius: 10px;
+  font-weight: 700; font-size: 13.5px; cursor: pointer; border: none; flex: 1;
+  box-shadow: 0 4px 14px rgba(106, 115, 87, 0.3);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.2s ease;
+}
+.popup-btn-join:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(106, 115, 87, 0.45);
+  background: #5a6249;
+}
+.popup-btn-join:active, .popup-btn-cancel:active {
+  transform: scale(0.97);
+}
+.header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:22px 0 20px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{
+  width:42px;height:42px;border-radius:8px;
+  background:var(--bg-olive); color:var(--bg-cream);
+  display:grid;place-items:center;font-size:18px;font-weight:700;
+  box-shadow:0 4px 16px rgba(106,115,87,0.2); flex:none;
+}
+.brand-text h1{
+  font:700 22px/1.1 var(--font-d); letter-spacing:-.01em;
+  color:var(--text-main);
+}
+.brand-text p{font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:500}
+
+.header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.live-pill{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:6px;
+  background:var(--live-soft);border:1px solid rgba(255,77,109,.25);
+  color:var(--live);font-size:12.5px;font-weight:600;
+}
+.live-pill .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--live);
+  animation:pulse 1.3s infinite;
+}
+@keyframes pulse{50%{opacity:.3}}
+.clock{font-size:12.5px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.join-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:8px;
+  background:var(--bg-olive); color:var(--bg-cream);
+  font-size:13px;font-weight:700;
+  transition:transform .18s ease,box-shadow .18s ease;
+  box-shadow:0 4px 12px rgba(106,115,87,0.25);
+}
+.join-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(106,115,87,0.35)}
+.join-btn svg{width:15px;height:15px}
+
+.filters{
+  display:flex;flex-direction:column;gap:10px;
+  padding:4px 0 22px;border-bottom:1px solid var(--border);margin-bottom:24px;
+}
+.filter-row{
+  display:flex;gap:8px;overflow-x:auto;padding:2px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.filter-row::-webkit-scrollbar{display:none}
+
+.pill{
+  flex:none;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 14px;border-radius:6px;
+  font-size:13.5px;font-weight:600;
+  color:var(--text-dim);background:var(--surface);
+  border:1px solid var(--border);transition:all .18s ease;white-space:nowrap;
+}
+.pill:hover{color:var(--text);border-color:var(--border-2);background:var(--surface-2)}
+.pill.active{color:var(--bg-cream);background:var(--bg-olive);border-color:var(--bg-olive)}
+.pill .count{
+  font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;
+  background:var(--surface-3);color:var(--muted);
+}
+.pill.active .count{background:rgba(255,255,255,0.2);color:var(--bg-cream)}
+.pill[data-tab="live"].active{color:var(--live);background:var(--live-soft);border-color:var(--live)}
+.pill[data-tab="live"].active .count{background:rgba(255,77,109,.2);color:var(--live)}
+
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
+  gap:16px;padding-bottom:48px;
+}
+
+.card{
+  display:flex;flex-direction:column;gap:14px;padding:18px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);
+  text-align:left;font:inherit;color:inherit;
+  transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease,background .2s ease;
+  cursor:pointer;position:relative;overflow:hidden;
+  box-shadow: var(--shadow);
+}
+.card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--bg-olive),transparent);
+  opacity:0;transition:opacity .25s ease;
+}
+.card:hover{border-color:var(--border-2);transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,0.08);background:var(--surface-2)}
+.card:hover::before{opacity:.7}
+.card.is-live::before{background:linear-gradient(90deg,transparent,var(--live),transparent);opacity:.9}
+.card.is-live{border-color:rgba(255,77,109,.25)}
+
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sport-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--muted);min-width:0;
+}
+.sport-chip .icon{font-size:14px;flex:none}
+.sport-chip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.status{
+  flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  padding:4px 8px;border-radius:4px;text-transform:uppercase;
+}
+.status.live{color:var(--live);background:var(--live-soft);border:1px solid rgba(255,77,109,.3)}
+.status.soon{color:var(--soon);background:var(--soon-soft);border:1px solid rgba(212,136,6,.3)}
+.status.done{color:var(--done);background:var(--done-soft);border:1px solid rgba(110,126,148,.25)}
+
+.card-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:6px 0}
+.team{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
+.crest{
+  width:50px;height:50px;border-radius:6px;
+  background:var(--surface-3);border:1px solid var(--border);
+  display:grid;place-items:center;overflow:hidden;position:relative;
+  font-weight:700;font-size:14px;color:var(--muted);flex:none;
+}
+.crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface-3);padding:4px}
+.team-name{
+  font-size:13px;font-weight:600;text-align:center;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.versus{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0 4px}
+.kickoff-time{font:700 18px/1 var(--font-d);color:var(--bg-olive);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kickoff-date{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+
+.card-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:12px;border-top:1px solid var(--border);font-size:12px;
+}
+.stream-count{color:var(--muted);font-weight:500}
+.stream-count.empty{color:var(--live)}
+.watch-cta{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:700;font-size:12.5px;transition:gap .18s ease}
+.card:hover .watch-cta{gap:8px}
+.watch-cta .arrow{transition:transform .18s ease}
+.card:hover .watch-cta .arrow{transform:translateX(2px)}
+
+.player-top{display:flex;align-items:center;gap:14px;padding:22px 0 16px;flex-wrap:wrap}
+.icon-btn{
+  width:40px;height:40px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface);
+  display:grid;place-items:center;font-size:18px;color:var(--text);
+  transition:all .18s ease;flex:none;
+  box-shadow: var(--shadow);
+}
+.icon-btn:hover{border-color:var(--bg-olive);color:var(--bg-olive);background:var(--surface-2)}
+.player-meta{flex:1;min-width:0}
+.player-title{font:700 clamp(18px,3vw,24px)/1.15 var(--font-d);letter-spacing:-.01em;overflow-wrap:anywhere}
+.player-sub{color:var(--muted);font-size:13px;margin-top:3px;font-weight:500}
+
+.screen{
+  position:relative;background:#000;
+  border-radius:var(--radius);overflow:hidden;
+  aspect-ratio:16/9;width:100%;
+  max-width:min(980px, calc((100vh - 220px) * 16 / 9));
+  max-width:min(980px, calc((100dvh - 220px) * 16 / 9));
+  margin:0 auto;border:1px solid var(--border);box-shadow:var(--shadow-lg);
+}
+
+.player-sub-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  max-width:980px;margin:12px auto 24px;flex-wrap:wrap;
+  padding:0 2px;
+}
+.player-brand-info {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-main);
+}
+.player-brand-info span { color: var(--bg-olive); }
+.player-actions-group { display: flex; align-items: center; gap: 8px; }
+
+.player-tg-btn, .player-share-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;
+  transition:transform .18s ease,box-shadow .18s ease;text-decoration:none;
+}
+.player-tg-btn{background:#0088cc;color:#fff;box-shadow:0 4px 12px rgba(0,136,204,0.25)}
+.player-tg-btn:hover{background:#0077b3;transform:translateY(-1px)}
+.player-tg-btn svg{width:14px;height:14px;fill:#fff}
+
+.player-share-btn{background:var(--surface);color:var(--text-main);border:1px solid var(--border);box-shadow:var(--shadow)}
+.player-share-btn:hover{background:var(--surface-2);border-color:var(--border-2)}
+.player-share-btn svg{width:14px;height:14px;fill:var(--text-main)}
+
+#player-container{position:absolute;inset:0;background:#000}
+#player-container video{
+  width:100%;height:100%;object-fit:contain;background:#000;display:block;
+}
+#player-container video.mode-fill{object-fit:fill}
+#player-container video.mode-cover{object-fit:cover}
+#player-container:fullscreen{width:100%;height:100%;background:#000}
+#player-container:-webkit-full-screen{width:100%;height:100%;background:#000}
+
+#jw-root,#jw-root .jw-wrapper,#jw-root video{width:100%!important;height:100%!important}
+#jw-root{position:absolute;inset:0}
+
+#status{
+  position:absolute;top:12px;left:12px;
+  transform:translateY(-10px);
+  z-index:9998;
+  display:flex;align-items:center;gap:7px;
+  padding:6px 14px 6px 10px;
+  background:rgba(251,242,218,.95);
+  border:1px solid rgba(0,0,0,.1);
+  font-size:11.5px;font-weight:500;letter-spacing:.2px;
+  border-radius:6px;pointer-events:none;
+  opacity:0;transition:opacity .25s ease,transform .25s ease;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;
+  box-shadow:0 2px 12px rgba(0,0,0,.12);
+  color:#1A1A1A;
+}
+#status.show{opacity:1;transform:translateY(0)}
+#status.ok .st-dot{background:#0088cc}
+#status.live{color:#1A1A1A}
+#status.live .st-dot{background:#6A7357;animation:dot-pulse 2s ease-in-out infinite}
+#status.warn{color:#D48806}
+#status.warn .st-dot{background:#D48806;animation:dot-pulse 1s ease-in-out infinite}
+#status.err{color:#FF4D6D}
+#status.err .st-dot{background:#FF4D6D}
+.st-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block}
+@keyframes dot-pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.35;transform:scale(.55)}
+}
+.loading-overlay{
+  position:absolute;inset:0;z-index:9997;
+  background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+.loading-overlay svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{color:#FBF2DA;font-size:12.5px;letter-spacing:.5px;text-align:center;padding:0 24px;font-weight:500}
+
+.sp-btn{
+  background:transparent!important;border:none!important;cursor:pointer!important;
+  padding:0 8px!important;opacity:.75;
+  display:flex;align-items:center;justify-content:center;
+  height:100%;min-width:36px;
+  transition:opacity .15s,color .15s;
+  color:#fff!important;-webkit-tap-highlight-color:transparent;
+}
+.sp-btn:hover{opacity:1}
+.sp-fit-btn{padding:0 7px!important;min-width:auto!important}
+.fit-pill{
+  font-size:10px;font-weight:700;letter-spacing:.4px;
+  padding:3px 6px;border-radius:4px;line-height:1;
+  border:1.5px solid rgba(255,255,255,.28);
+  color:rgba(255,255,255,.8);
+  pointer-events:none;white-space:nowrap;
+  transition:border-color .2s,color .2s;
+}
+.sp-fit-btn.mode-fill .fit-pill{border-color:#0088cc;color:#0088cc}
+.sp-fit-btn.mode-cover .fit-pill{border-color:#6A7357;color:#6A7357}
+
+.shaka-controls-container button{color:#fff!important}
+.shaka-video-container{background-color:#000!important}
+.shaka-spinner-container{display:none!important}
+.shaka-video-container .shaka-scrim-container{
+  background:linear-gradient(180deg, rgba(0,0,0,.5) 0%, transparent 25%, transparent 55%, rgba(0,0,0,.75) 100%) !important;
+}
+.shaka-overflow-menu, .shaka-settings-menu{
+  background-color:#FBF2DA !important;
+  color:#1A1A1A !important;
+  border:1px solid rgba(0,0,0,0.1) !important;
+  border-radius:8px !important;
+  padding:6px !important;
+  box-shadow:0 12px 30px rgba(0,0,0,.15) !important;
+}
+.shaka-overflow-menu li, .shaka-settings-menu li{padding:0 !important;margin:2px 0 !important}
+.shaka-overflow-menu button, .shaka-settings-menu button{
+  color:#1A1A1A !important;padding:10px 14px !important;
+  border-radius:6px !important;font-size:13px !important;
+}
+.shaka-settings-menu button.shaka-chosen-item{
+  color:#FBF2DA !important;background-color:#6A7357 !important;
+}
+
+.section-title{
+  font:600 13px var(--font-b);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);max-width:980px;margin:28px auto 12px;
+}
+.streams{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto}
+.stream-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;padding:14px 16px;border-radius:var(--radius-md);
+  text-align:left;color:var(--text);
+  border:1px solid var(--border);background:var(--surface);
+  transition:all .18s ease;
+  box-shadow: var(--shadow);
+}
+.stream-btn:hover{border-color:var(--bg-olive);background:var(--surface-2)}
+.stream-btn.active{
+  border-color:var(--bg-olive);background:var(--surface-2);
+  box-shadow:0 0 0 2px var(--bg-olive) inset;
+}
+.stream-btn .title{
+  font-weight:600;font-size:14px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.stream-btn .tags{display:flex;align-items:center;gap:8px;flex:none}
+.type-badge{
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 8px;border-radius:4px;
+  background:var(--surface-3);color:var(--text-dim);
+}
+.type-badge.dash{color:#0088cc;background:rgba(0,136,204,.12)}
+.type-badge.hls{color:#D48806;background:rgba(212,136,6,.12)}
+.stream-btn.active .type-badge{background:var(--bg-olive);color:var(--bg-cream)}
+
+.state{
+  grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px;gap:14px;text-align:center;
+}
+.state h3{font:600 18px var(--font-d);color:var(--text)}
+.state p{color:var(--muted);font-size:13.5px;max-width:400px}
+.err-icon{
+  width:44px;height:44px;border-radius:8px;
+  background:var(--live-soft);color:var(--live);
+  display:grid;place-items:center;font-size:20px;
+}
+</style>
+</head>
+<body>
+<!-- Popup 1: Initial Smooth Fading Telegram Popup -->
+<div class="overlay" id="telegram-overlay-1">
+  <div class="popup-card">
+    <h3>Join Our Telegram</h3>
+    <p>Get instant access to free high-definition streams and live match updates.</p>
+    <div class="popup-actions">
+      <button class="popup-btn-cancel" id="popup-1-cancel">Later</button>
+      <button class="popup-btn popup-btn-join" id="popup-1-join">Join Channel →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup 2: Secondary VIP Popup with Fade/Scale Effect -->
+<div class="overlay" id="telegram-overlay-2">
+  <div class="popup-card">
+    <h3>Don't Miss Out! 🔥</h3>
+    <p>Join our exclusive VIP Telegram network right now for uninterrupted streams.</p>
+    <div class="popup-actions">
+      <button class="popup-btn-cancel" id="popup-2-cancel">Close</button>
+      <button class="popup-btn popup-btn-join" id="popup-2-join">Join VIP Channel Now →</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <section id="hubView" class="view active">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark">FC</div>
+        <div class="brand-text">
+          <h1>FootxCrate</h1>
+          <p>Live sports streaming hub</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="live-pill"><span class="dot"></span> Live</div>
+        <div class="clock" id="clock"></div>
+        <a class="join-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+          <span>Join Channel</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="filters">
+      <div class="filter-row" id="sports" role="tablist" aria-label="Sports"></div>
+      <div class="filter-row" id="tabs" role="tablist" aria-label="Status"></div>
+    </div>
+
+    <main id="list" class="grid" aria-live="polite"></main>
+  </section>
+
+  <section id="playerView" class="view">
+    <header class="player-top">
+      <button class="icon-btn" id="backHub" aria-label="Back to matches">←</button>
+      <div class="player-meta">
+        <h2 class="player-title" id="playerTitle">FootxCrate Player</h2>
+        <p class="player-sub" id="playerSub"></p>
+      </div>
+    </header>
+
+    <div class="screen">
+      <div id="player-container"></div>
+    </div>
+
+    <div class="player-sub-bar">
+      <div class="player-brand-info">
+        <span>FootxCrate</span> — Secure Live Stream
+      </div>
+      <div class="player-actions-group">
+        <a class="player-tg-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+          <span>Join Telegram</span>
+        </a>
+        <button class="player-share-btn" id="shareBtn" aria-label="Share Stream">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+          <span>Share</span>
+        </button>
+      </div>
+    </div>
+
+    <h3 class="section-title">Available Streams</h3>
+    <div class="streams" id="streams"></div>
+  </section>
+</div>
+<script>
+"use strict";
+const DATA_URL = "https://sonujson-v6.pages.dev/Data/events/allinone.json";
+const TG_LINK = 'https://t.me/+lVY6VyOPZmtjOWM1';
+const LOG  = (...a) => console.log("[FootxCrate]", ...a);
+const WARN = (...a) => console.warn("[FootxCrate]", ...a);
+const ERR  = (...a) => console.error("[FootxCrate]", ...a);
+
+const $ = id => document.getElementById(id);
+
+const state = {
+  events: [],
+  sport: "All",
+  tab: "all",
+  currentEvent: null,
+  currentStreams: [],
+  currentIndex: 0
+};
+
+function getTier(){
+  const mem = navigator.deviceMemory || 4;
+  const cores = navigator.hardwareConcurrency || 4;
+  const mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const net = conn ? (conn.effectiveType || "4g") : "4g";
+  if(!mob) return "high";
+  if(mem <= 1.5 || cores <= 2 || net === "slow-2g" || net === "2g") return "low";
+  if(mem <= 3 || cores <= 4) return "mid";
+  return "high";
+}
+const TIER = getTier();
+const PROF = {
+  low : { buf:4,  reBuf:1.5, behind:10, maxH:480,  maxBw:1000000, bwEst:400000  },
+  mid : { buf:7,  reBuf:1.5, behind:20, maxH:720,  maxBw:3000000, bwEst:1000000 },
+  high: { buf:10, reBuf:1.5, behind:25, maxH:1080, maxBw:0,       bwEst:2000000 }
+}[TIER];
+
+function esc(v){
+  return String(v ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function parseDate(value){
+  if(!value) return null;
+  let s = String(value).trim();
+  if(!s || s === "null" || s === "undefined") return null;
+
+  const isIST = /\bIST\b/i.test(s);
+  if(isIST) s = s.replace(/\s*IST\s*$/i, "").trim();
+
+  let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m){
+    const [,y,mo,d,h,mi,se="00"] = m;
+    const iso = `${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${isIST ? "+05:30" : "Z"}`;
+    const dt = new Date(iso);
+    if(!isNaN(dt.getTime())) return dt;
+  }
+
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function getStatus(e){
+  const now = Date.now();
+  if(now < e.st) return "soon";
+  if(now <= e.en) return "live";
+  return "done";
+}
+
+function duration(ms){
+  const mins = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  if(h >= 24){ const d = Math.floor(h / 24); return `${d}d ${h % 24}h`; }
+  if(h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+function timeString(d){ return d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+function dateString(d){ return d.toLocaleDateString([], {day:"numeric", month:"short"}); }
+
+function sportIcon(sport){ return ""; }
+
+function crest(url, name){
+  const initials = String(name || "")
+    .replace(/[^A-Za-z0-9 ]/g,"").split(/\s+/).filter(Boolean)
+    .map(x => x[0]).join("").slice(0,3).toUpperCase() || "?";
+  if(!url || url === "null") return `<div class="crest">${esc(initials)}</div>`;
+  return `<div class="crest"><span>${esc(initials)}</span><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></div>`;
+}
+
+async function fetchJson(url){
+  LOG("Fetching:", url);
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  const text = await res.text();
+  if(text.trim().startsWith("<")) throw new Error("Server returned HTML instead of JSON.");
+  try{ return JSON.parse(text); }
+  catch(err){ throw new Error("Invalid JSON: " + err.message); }
+}
+
+function normalize(data){
+  const list = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : null);
+  if(!list) throw new Error("Expected an events array.");
+  const events = [];
+  let ok = 0, skipped = 0;
+
+  list.forEach((item, index) => {
+    try{
+      const info = item.event || {};
+      const st = parseDate(info.startTimeIST) || parseDate(info.startTime) || parseDate(item.startTime);
+      if(!st){ skipped++; return; }
+      let en = parseDate(info.endTimeIST) || parseDate(info.endTime) || parseDate(item.endTime);
+      if(!en || en <= st) en = new Date(st.getTime() + 3 * 3600000);
+
+      const rawStreams = Array.isArray(item.streams) ? item.streams : [];
+      const seen = new Set();
+      const streams = [];
+      rawStreams.forEach((s, i) => {
+        if(!s) return;
+        const link = String(s.link || s.url || "").split("|")[0].trim();
+        if(!link || !/^https?:\/\//i.test(link)) return;
+        if(seen.has(link)) return;
+        const t = String(s.type || "").toLowerCase();
+        const isDash = t === "dash" || /\.mpd(\?|$)/i.test(link);
+        const isHls  = t === "hls"  || t === "0" || /\.m3u8(\?|$)/i.test(link);
+        if(!isDash && !isHls) return;
+        seen.add(link);
+        streams.push({
+          title: String(s.title || s.name || `Stream ${i+1}`).trim(),
+          link,
+          type: isDash ? "android" : "ios",
+          key: String(s.api || s.key || "").trim()
+        });
+      });
+
+      events.push({
+        id: item.id ?? String(index),
+        sport: String(info.category || info.name || item.cat || "Other").trim(),
+        comp: String(info.type || info.name || item.title || "").trim(),
+        a: info.teamA || info.home || "",
+        b: info.teamB || info.away || "",
+        fa: info.teamAFlag || info.homeFlag || "",
+        fb: info.teamBFlag || info.awayFlag || "",
+        st, en, streams
+      });
+      ok++;
+    }catch(err){ ERR(`Event #${index} error:`, err); skipped++; }
+  });
+  LOG(`Normalize done — ok=${ok}, skipped=${skipped}`);
+  return events;
+}
+
+async function loadData(){
+  try{
+    const raw = await fetchJson(DATA_URL);
+    state.events = normalize(raw);
+    if(!state.events.length){
+      $("list").innerHTML = `<div class="state"><div class="err-icon">!</div><h3>No events found</h3><p>The feed loaded but no matches had a usable start time.</p></div>`;
+      return;
+    }
+    renderHub();
+    if(!window.__booted){
+      window.__booted = true;
+      route();
+    }
+  }catch(err){
+    ERR("Load failed:", err);
+    $("list").innerHTML = `<div class="state"><div class="err-icon">!</div><h3>Could not load events</h3><p>${esc(err.message)}</p></div>`;
+  }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/shaka-player@5.2.4/dist/shaka-player.ui.min.js"></script>
+<script>
+"use strict";
+
+let player = null;
+let overlay = null;
+let jwInstance = null;
+let playbackToken = 0;
+
+let sessionStart = 0;
+let thermalTimer = null;
+let thermalApplied = false;
+let restrictionsRelaxed = false;
+let refreshing = false;
+let retries = 0;
+let edgeTried = false;
+let started = false;
+let stallTmr = null;
+let currentStreamInfo = null;
+let jwFitMode = 0;
+
+function toast(msg, type, dur){
+  const el = $("status");
+  if(!el) return;
+  el.innerHTML = `<span class="st-dot"></span><span>${esc(msg)}</span>`;
+  el.className = "show " + (type || "ok");
+  clearTimeout(el.__tmr);
+  if(dur !== 0){
+    el.__tmr = setTimeout(() => {
+      el.className = el.className.replace("show","").trim();
+    }, dur || 4000);
+  }
+}
+
+function shakaErrStr(e){
+  if(!e) return "Playback Error";
+  const cat = {1:"Network",2:"Text",3:"Media",4:"Manifest",5:"Stream",6:"DRM",7:"Player"};
+  let s = (cat[e.category] || "Error") + " " + e.category + ":" + e.code;
+  if(e.data && e.data[0] && typeof e.data[0] === "string") s += " — " + e.data[0].slice(0,72);
+  return s;
+}
+
+function ratioLabel(w,h){
+  if(!w || !h) return "—";
+  const gcd = (a,b) => b ? gcd(b,a%b) : a;
+  const g = gcd(w,h) || 1;
+  const rw = w/g, rh = h/g;
+  const named = {"16:9":16/9,"4:3":4/3,"21:9":21/9,"1:1":1,"9:16":9/16,"3:2":3/2,"5:4":5/4,"2:1":2};
+  const real = w/h;
+  let best = null, bestD = .02;
+  Object.keys(named).forEach(k => {
+    const d = Math.abs(named[k] - real);
+    if(d < bestD){ bestD = d; best = k; }
+  });
+  if(best) return best;
+  if(rw <= 40 && rh <= 40) return rw + ":" + rh;
+  return real.toFixed(2) + ":1";
+}
+
+function getClearKey(record){
+  const raw = String(record && record.key || "").trim();
+  if(!raw || !raw.includes(":")) return null;
+  const parts = raw.split(":");
+  if(parts.length < 2) return null;
+  const kid = parts.shift().trim().replace(/^0x/i,"").toLowerCase();
+  const key = parts.join(":").trim().replace(/^0x/i,"").toLowerCase();
+  if(!/^[0-9a-f]+$/.test(kid) || !/^[0-9a-f]+$/.test(key)) return null;
+  return {keyId: kid, key};
+}
+
+function makeLoadingEl(){
+  const el = document.createElement("div");
+  el.className = "loading-overlay";
+  el.innerHTML = `<svg width="34" height="34" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#1a1a1a" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#0088cc" stroke-width="4" stroke-linecap="round"/></svg><p>Loading stream…</p>`;
+  return el;
+}
+
+function injectFitButton(container, vid){
+  const panel = container.querySelector(".shaka-controls-button-panel");
+  if(!panel) return false;
+  if(panel.querySelector(".sp-fit-btn")) return true;
+  const anchor = panel.querySelector(".shaka-fullscreen-button");
+  const FITS = ["contain","fill","cover"];
+  const FIT_LABELS = {contain:"Fit", fill:"Fill", cover:"Zoom"};
+  let fitIdx = 0;
+  const fitBtn = document.createElement("button");
+  fitBtn.className = "sp-btn sp-fit-btn";
+  fitBtn.title = "Video Fit: Fit";
+  fitBtn.setAttribute("aria-label", "Cycle Video Fit Mode");
+  fitBtn.innerHTML = '<span class="fit-pill">—</span>';
+  if(anchor) panel.insertBefore(fitBtn, anchor);
+  else panel.appendChild(fitBtn);
+  let currentRatio = "—";
+  function applyFit(i){
+    fitIdx = i;
+    const m = FITS[i];
+    vid.classList.remove("mode-fill","mode-cover");
+    if(m === "fill") vid.classList.add("mode-fill");
+    if(m === "cover") vid.classList.add("mode-cover");
+    fitBtn.classList.remove("mode-fill","mode-cover");
+    if(m !== "contain") fitBtn.classList.add("mode-" + m);
+    fitBtn.title = "Video Fit: " + FIT_LABELS[m];
+    const pill = fitBtn.querySelector(".fit-pill");
+    if(pill) pill.textContent = m === "contain" ? currentRatio : FIT_LABELS[m];
+  }
+  fitBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    applyFit((fitIdx + 1) % FITS.length);
+  });
+  ["fullscreenchange","webkitfullscreenchange"].forEach(ev => {
+    document.addEventListener(ev, () => {
+      if(!document.fullscreenElement && !document.webkitFullscreenElement) applyFit(0);
+    });
+  });
+  let ratioTries = 0;
+  function updateRatio(){
+    const pill = fitBtn.querySelector(".fit-pill");
+    if(!pill) return;
+    if(vid.videoWidth > 0){
+      currentRatio = ratioLabel(vid.videoWidth, vid.videoHeight);
+      if(FITS[fitIdx] === "contain") pill.textContent = currentRatio;
+      ratioTries = 0;
+    } else if(ratioTries < 15){
+      ratioTries++;
+      setTimeout(updateRatio, 700);
+    }
+  }
+  vid.addEventListener("loadedmetadata", () => { ratioTries = 0; updateRatio(); });
+  vid.addEventListener("resize", updateRatio);
+  vid.addEventListener("timeupdate", function onFirst(){ vid.removeEventListener("timeupdate", onFirst); updateRatio(); });
+  updateRatio();
+  return true;
+}
+
+function buildCfg(){
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const effMaxH = thermalApplied && mobile ? Math.min(PROF.maxH, 720) : PROF.maxH;
+  const restr = {};
+  if(!restrictionsRelaxed){
+    if(effMaxH < 1080) restr.maxHeight = effMaxH;
+    if(PROF.maxBw > 0) restr.maxBandwidth = PROF.maxBw;
+  }
+  return {
+    manifest:{ defaultPresentationDelay:4, ignoreTextStreamFailures:true, retryParameters:{ maxAttempts:5, baseDelay:500, backoffFactor:2, fuzzFactor:.5, timeout:30000 } },
+    streaming:{ lowLatencyMode:false, bufferingGoal:PROF.buf, rebufferingGoal:PROF.reBuf, bufferBehind:PROF.behind, safeSeekOffset:4, stallEnabled:true, stallThreshold:1, stallSkip:.3, inaccurateManifestTolerance:0, retryParameters:{ maxAttempts:5, baseDelay:500, backoffFactor:2, fuzzFactor:.5, timeout:30000 } },
+    abr:{ enabled:true, defaultBandwidthEstimate:PROF.bwEst, switchInterval:4, restrictions:restr }
+  };
+}
+
+async function destroyPlayer(){
+  if(stallTmr){ clearTimeout(stallTmr); stallTmr = null; }
+  if(thermalTimer){ clearInterval(thermalTimer); thermalTimer = null; }
+  if(jwInstance){ try{ jwInstance.remove(); }catch(e){} jwInstance = null; }
+  if(overlay){ try{ overlay.destroy(); }catch(e){} overlay = null; }
+  if(player){ try{ await player.destroy(); }catch(e){} player = null; }
+  const c = $("player-container");
+  if(c) c.innerHTML = "";
+  currentStreamInfo = null;
+  sessionStart = 0; thermalApplied = false; restrictionsRelaxed = false;
+  refreshing = false; retries = 0; edgeTried = false; started = false;
+  jwFitMode = 0;
+}
+async function stopPlayback(){
+  playbackToken++;
+  await destroyPlayer();
+}
+
+async function mountJWPlayer(record, token){
+  if(!window.jwplayer){
+    $("player-container").innerHTML = `<div class="screen-msg">JW Player failed to load.</div>`;
+    return;
+  }
+  const container = $("player-container");
+  container.innerHTML = "";
+  const root = document.createElement("div");
+  root.id = "jw-root";
+  container.appendChild(root);
+  const statusEl = document.createElement("div");
+  statusEl.id = "status";
+  container.appendChild(statusEl);
+  const loadEl = makeLoadingEl();
+  container.appendChild(loadEl);
+  jwInstance = window.jwplayer(root);
+  toast("Loading Stream…", "warn", 0);
+  jwInstance.setup({
+    file: record.link, autostart: true, mute: true,
+    primary: "html5", hlshtml: true,
+    width: "100%", height: "100%",
+    crossorigin: "anonymous",
+    stretching: "uniform",
+    playbackRateControls: false,
+    displaytitle: false
+  });
+
+  jwInstance.on("ready", () => {
+    if(token !== playbackToken) return;
+    loadEl.hidden = true;
+    toast("Ready — Tap ▶ To Play", "ok", 5000);
+    try{
+      const fitSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm14 0h2v6h-6v-2h4v-4z"/></svg>`;
+      const fitIcon = "data:image/svg+xml," + encodeURIComponent(fitSvg);
+      jwInstance.addButton(fitIcon, "Fit", cycleJwFit, "sp-jw-fit");
+    }catch(e){}
+  });
+
+  jwInstance.on("play", () => {
+    if(token !== playbackToken) return;
+    started = true;
+    retries = 0;
+    toast("Live", "live", 3000);
+  });
+
+  jwInstance.on("buffer", () => {
+    if(token !== playbackToken) return;
+    toast("Buffering…", "warn", 0);
+  });
+
+  jwInstance.on("error", (e) => {
+    if(token !== playbackToken) return;
+    ERR("JW Player error:", e);
+    if(retries >= 5){ toast("Stream Unavailable.", "err", 0); return; }
+    retries++;
+    const attempt = retries;
+    toast(`Reconnecting… (${attempt}/5)`, "warn", 0);
+    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+    setTimeout(() => {
+      if(token !== playbackToken) return;
+      try{ jwInstance.load(record.link); jwInstance.play(); }catch(err){ ERR("JW reload failed:", err); }
+    }, delay);
+  });
+
+  const unmuteOnce = () => { try{ jwInstance.setMute(false); }catch(_){} };
+  container.addEventListener("pointerdown", unmuteOnce, {capture:true, once:true});
+  container.addEventListener("click", unmuteOnce, {capture:true, once:true});
+}
+
+function cycleJwFit(){
+  const modes  = ["uniform", "exactfit", "fill"];
+  const labels = ["Fit", "Fill", "Zoom"];
+  jwFitMode = (jwFitMode + 1) % modes.length;
+  try{ jwInstance.setStretching(modes[jwFitMode]); }catch(e){}
+  toast("Fit: " + labels[jwFitMode], "ok", 1500);
+}
+
+async function mountShaka(record, token){
+  shaka.polyfill.installAll();
+  if(!shaka.Player.isBrowserSupported()) throw new Error("Browser not supported.");
+
+  const container = $("player-container");
+  container.innerHTML = "";
+
+  const vid = document.createElement("video");
+  vid.id = "shaka-video";
+  vid.playsInline = true;
+  vid.setAttribute("playsinline","");
+  vid.setAttribute("webkit-playsinline","");
+  vid.preload = "none";
+  vid.muted = true;
+  vid.autoplay = true;
+  container.appendChild(vid);
+
+  const statusEl = document.createElement("div");
+  statusEl.id = "status";
+  container.appendChild(statusEl);
+
+  const loadEl = makeLoadingEl();
+  container.appendChild(loadEl);
+
+  player = new shaka.Player();
+  await player.attach(vid);
+
+  overlay = new shaka.ui.Overlay(player, container, vid);
+  overlay.configure({
+    controlPanelElements: ["play_pause","mute","volume","time_and_duration","spacer","picture_in_picture","fullscreen","overflow_menu"],
+    seekBarColors: { base:"#828282", buffered:"#D48806", played:"#0088cc" }
+  });
+
+  let tries = 0;
+  (function tryInject(){
+    if(injectFitButton(container, vid)) return;
+    if(++tries < 10) setTimeout(tryInject, 150);
+  })();
+
+  const key = getClearKey(record);
+  if(key){ player.configure({ drm:{ clearKeys:{ [key.keyId]: key.key } } }); }
+  else { player.configure({ drm: {} }); }
+
+  player.configure(buildCfg());
+
+  sessionStart = Date.now();
+  const streamInfo = { url: record.link, type: record.type };
+  currentStreamInfo = streamInfo;
+
+  async function reload(){
+    if(refreshing || token !== playbackToken || !player) return;
+    if(retries >= 5){ toast("Stream Unavailable.", "err", 0); return; }
+    refreshing = true; retries++;
+    const attempt = retries;
+    toast(`Reconnecting… (${attempt}/5)`, "warn", 0);
+    try{
+      player.configure(buildCfg());
+      await player.load(streamInfo.url);
+      if(token !== playbackToken){ refreshing = false; return; }
+      vid.play().catch(()=>{});
+      retries = 0; edgeTried = false;
+      toast("Live", "live", 4000);
+      refreshing = false;
+    }catch(err){
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+      setTimeout(() => { refreshing = false; reload(); }, delay);
+    }
+  }
+
+  function goLiveEdge(){
+    if(refreshing || token !== playbackToken || !player) return;
+    try{ player.goToLive(); edgeTried = true; toast("Syncing To Live Edge…", "warn", 2000); }
+    catch(_){ reload(); }
+  }
+
+  const RECOVERABLE = [1001,1002,1003,4012,6006,6007,7000,7001,7002];
+  player.addEventListener("error", (ev) => {
+    if(token !== playbackToken) return;
+    const err = ev.detail, code = err && err.code;
+    if(code === 4014 && !restrictionsRelaxed){
+      restrictionsRelaxed = true; refreshing = true;
+      toast("Adjusting Quality…", "warn", 2000);
+      player.configure(buildCfg());
+      player.load(streamInfo.url)
+        .then(() => { if(token !== playbackToken) return; vid.play().catch(()=>{}); retries = 0; toast("Live","live",4000); })
+        .catch(() => { if(token === playbackToken) setTimeout(reload, 500); })
+        .finally(() => { refreshing = false; });
+      return;
+    }
+    if(RECOVERABLE.includes(code)){
+      toast("Buffering…", "warn", 0);
+      setTimeout(() => { if(!refreshing) reload(); }, 500);
+    } else {
+      toast(shakaErrStr(err), "err", 6000);
+    }
+  });
+
+  vid.addEventListener("waiting", () => {
+    if(stallTmr) return;
+    toast("Buffering…", "warn", 0);
+    if(!started || refreshing) return;
+    stallTmr = setTimeout(() => {
+      stallTmr = null;
+      if(!edgeTried) goLiveEdge(); else reload();
+    }, 5000);
+  });
+
+  vid.addEventListener("playing", () => {
+    started = true;
+    if(stallTmr){ clearTimeout(stallTmr); stallTmr = null; }
+    if(!refreshing) toast("Live", "live", 3000);
+  });
+
+  const unmuteOnce = () => { vid.muted = false; };
+  container.addEventListener("pointerdown", unmuteOnce, {capture:true, once:true});
+  container.addEventListener("click", unmuteOnce, {capture:true, once:true});
+
+  try{
+    toast("Loading Stream…", "warn", 0);
+    await player.load(streamInfo.url);
+    if(token !== playbackToken) return;
+    loadEl.hidden = true;
+    toast("Ready — Tap ▶ To Play", "ok", 5000);
+    vid.muted = true;
+    vid.play().catch(() => {});
+  }catch(e){
+    loadEl.hidden = true;
+    toast("Connection Error — Retrying…", "warn", 0);
+    setTimeout(reload, 800);
+  }
+}
+
+async function mountPlayer(record, token){
+  if(record.type === "ios") return mountJWPlayer(record, token);
+  return mountShaka(record, token);
+}
+
+async function playRecord(record, index){
+  if(!record) return;
+  document.querySelectorAll("[data-player-stream]").forEach((btn, i) => btn.classList.toggle("active", i === index));
+  const token = ++playbackToken;
+  await destroyPlayer();
+  const rawUrl = String(record.link || "").split("|")[0].trim();
+  if(!/^https?:\/\//i.test(rawUrl)){
+    $("player-container").innerHTML = `<div class="screen-msg">Invalid stream link.</div>`;
+    return;
+  }
+  try{
+    await mountPlayer({...record, link: rawUrl}, token);
+  }catch(error){
+    if(token === playbackToken){
+      $("player-container").innerHTML = `<div class="screen-msg">Could not play this stream.<small>${esc(error.message || "")}</small></div>`;
+    }
+  }
+}
+
+function renderPlayerStreams(activeIndex){
+  const box = $("streams");
+  if(!state.currentStreams.length){
+    box.innerHTML = `<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>`;
+    return;
+  }
+  box.innerHTML = state.currentStreams.map((s, i) =>
+    `<button class="stream-btn ${i === activeIndex ? "active" : ""}" data-player-stream="${i}" type="button">
+       <span class="title">${esc(s.title)}</span>
+       <span class="tags"><span class="type-badge ${s.type.toLowerCase()}">${esc(s.type)}</span></span>
+     </button>`
+  ).join("");
+}
+</script>
+<script>
+"use strict";
+
+function route(){
+  const raw = location.hash.replace(/^#\/?/, "");
+  const [path, qs] = raw.split("?");
+  const params = new URLSearchParams(qs || "");
+  if(path === "watch") openPlayer(params.get("id"), Number(params.get("stream") || 0));
+  else showHub();
+}
+
+function showHub(){
+  stopPlayback();
+  state.currentEvent = null;
+  state.currentStreams = [];
+  $("playerView").classList.remove("active");
+  $("hubView").classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+async function openPlayer(id, index){
+  $("hubView").classList.remove("active");
+  $("playerView").classList.add("active");
+  window.scrollTo(0, 0);
+
+  const event = state.events.find(e => String(e.id) === String(id));
+  if(!event){
+    state.currentEvent = null;
+    state.currentStreams = [];
+    $("playerTitle").textContent = "Match not found";
+    $("playerSub").textContent = "";
+    $("streams").innerHTML = "";
+    $("player-container").innerHTML = `<div class="screen-msg">This match is no longer available.</div>`;
+    return;
+  }
+
+  state.currentEvent = event;
+  state.currentStreams = event.streams || [];
+  state.currentIndex = index;
+
+  $("playerTitle").textContent = event.a && event.b ? `${event.a} vs ${event.b}` : (event.comp || "FootxCrate Player");
+  $("playerSub").textContent = [event.sport, event.comp].filter(Boolean).join(" · ");
+
+  renderPlayerStreams(index);
+
+  const record = state.currentStreams[index];
+  if(record) await playRecord(record, index);
+  else $("player-container").innerHTML = `<div class="screen-msg">No playable streams for this match.</div>`;
+}
+
+function eventCard(e){
+  const status = getStatus(e);
+  const now = Date.now();
+  const isLive = status === "live";
+  let statusClass = "", statusText = "";
+  if(status === "live"){ statusClass = "live"; statusText = "Live"; }
+  else if(status === "soon"){ statusClass = "soon"; statusText = `in ${duration(e.st - now)}`; }
+  else { statusClass = "done"; statusText = "Finished"; }
+  const n = e.streams.length;
+  const streamInfo = n === 0 ? `<span class="stream-count empty">No streams</span>` : `<span class="stream-count">${n} stream${n > 1 ? "s" : ""}</span>`;
+  const sameTeam = !e.b || e.a === e.b;
+  const sideA = `<div class="team">${crest(e.fa, e.a || e.comp)}<div class="team-name">${esc(e.a || e.comp || "TBD")}</div></div>`;
+  const sideB = sameTeam ? `<div class="team"></div>` : `<div class="team">${crest(e.fb, e.b)}<div class="team-name">${esc(e.b)}</div></div>`;
+  return `
+    <button class="card ${isLive ? "is-live" : ""}" data-watch-event="${esc(e.id)}" type="button" aria-label="${esc(e.a)} vs ${esc(e.b || "TBD")}">
+      <div class="card-top">
+        <span class="sport-chip"><span class="icon">${sportIcon(e.sport)}</span><span class="name">${esc(e.sport)}${e.comp ? " · " + esc(e.comp) : ""}</span></span>
+        <span class="status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="card-body">
+        ${sideA}
+        <div class="versus"><div class="kickoff-time">${timeString(e.st)}</div><div class="kickoff-date">${dateString(e.st)} · IST</div></div>
+        ${sideB}
+      </div>
+      <div class="card-foot">${streamInfo}<span class="watch-cta">Watch <span class="arrow">→</span></span></div>
+    </button>
+  `;
+}
+
+function renderHub(){
+  const counts = {live:0, soon:0, done:0};
+  state.events.forEach(e => counts[getStatus(e)]++);
+  const sports = ["All", ...new Set(state.events.map(e => e.sport).filter(Boolean))];
+  $("sports").innerHTML = sports.map(s => {
+    const n = s === "All" ? state.events.length : state.events.filter(e => e.sport === s).length;
+    return `<button class="pill ${state.sport === s ? "active" : ""}" data-sport="${esc(s)}" role="tab">${s === "All" ? "All" : sportIcon(s)} ${esc(s)}<span class="count">${n}</span></button>`;
+  }).join("");
+  const tabs = [["all","All",state.events.length],["live","Live",counts.live],["soon","Upcoming",counts.soon]];
+  $("tabs").innerHTML = tabs.map(([key,label,n]) =>
+    `<button class="pill ${state.tab === key ? "active" : ""}" data-tab="${key}" role="tab">${label}<span class="count">${n}</span></button>`
+  ).join("");
+  const rows = state.events
+    .filter(e => (state.tab === "all" || getStatus(e) === state.tab) && (state.sport === "All" || e.sport === state.sport))
+    .sort((a, b) => {
+      const order = {live:0, soon:1, done:2};
+      const sa = order[getStatus(a)] ?? 3, sb = order[getStatus(b)] ?? 3;
+      if(sa !== sb) return sa - sb;
+      return a.st - b.st;
+    });
+  $("list").innerHTML = rows.length ? rows.map(eventCard).join("") : `<div class="state"><h3>No matches found</h3><p>Try a different filter.</p></div>`;
+  $("clock").textContent = new Date().toLocaleString([], {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) + " IST";
+}
+
+function onViewportChange(){
+  if(typeof overlay !== "undefined" && overlay && overlay.getControls){ try{ overlay.getControls().dispatchEvent(new Event("resize")); }catch(_){} }
+  if(typeof jwInstance !== "undefined" && jwInstance && typeof jwInstance.resize === "function"){ try{ jwInstance.resize("100%","100%"); }catch(_){} }
+}
+let rotationAttached = false;
+function setupRotation(){
+  if(rotationAttached) return;
+  rotationAttached = true;
+  window.addEventListener("resize", onViewportChange, {passive:true});
+  window.addEventListener("orientationchange", () => { setTimeout(onViewportChange, 200); setTimeout(onViewportChange, 450); });
+  document.addEventListener("fullscreenchange", () => {
+    if(document.fullscreenElement){
+      if(screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(()=>{});
+    } else {
+      if(screen.orientation && screen.orientation.unlock){ try{ screen.orientation.unlock(); }catch(_){} }
+    }
+    setTimeout(onViewportChange, 120);
+  });
+}
+
+$("list").addEventListener("click", e => {
+  const card = e.target.closest("[data-watch-event]");
+  if(!card) return;
+  location.hash = `#watch?id=${encodeURIComponent(card.dataset.watchEvent)}&stream=0`;
+});
+
+$("sports").addEventListener("click", e => {
+  const btn = e.target.closest("[data-sport]"); if(!btn) return;
+  state.sport = btn.dataset.sport; renderHub();
+});
+
+$("tabs").addEventListener("click", e => {
+  const btn = e.target.closest("[data-tab]"); if(!btn) return;
+  state.tab = btn.dataset.tab; renderHub();
+});
+
+$("streams").addEventListener("click", e => {
+  const btn = e.target.closest("[data-player-stream]");
+  if(!btn || !state.currentEvent) return;
+  const index = Number(btn.dataset.playerStream);
+  if(!state.currentStreams[index]) return;
+  state.currentIndex = index;
+  history.replaceState(null, "", `#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${index}`);
+  playRecord(state.currentStreams[index], index);
+});
+
+$("backHub").onclick = () => { location.hash = "#/"; };
+window.addEventListener("hashchange", route);
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Enhanced Smooth Popup Fade-In / Fade-Out Logic
+  const overlay1 = document.getElementById('telegram-overlay-1');
+  const overlay2 = document.getElementById('telegram-overlay-2');
+
+  setTimeout(() => {
+    if(overlay1) overlay1.classList.add('show');
+  }, 3500);
+
+  const closePopup1 = () => {
+    if(overlay1) overlay1.classList.remove('show');
+    setTimeout(() => {
+      if(overlay2) overlay2.classList.add('show');
+    }, 350);
+  };
+
+  const closePopup2 = () => {
+    if(overlay2) overlay2.classList.remove('show');
+  };
+
+  const openTelegram = () => {
+    window.open(TG_LINK, "_blank");
+    closePopup1();
+    closePopup2();
+  };
+
+  const p1Cancel = document.getElementById('popup-1-cancel');
+  const p1Join = document.getElementById('popup-1-join');
+  const p2Cancel = document.getElementById('popup-2-cancel');
+  const p2Join = document.getElementById('popup-2-join');
+
+  if(p1Cancel) p1Cancel.addEventListener('click', closePopup1);
+  if(p1Join) p1Join.addEventListener('click', openTelegram);
+  if(p2Cancel) p2Cancel.addEventListener('click', closePopup2);
+  if(p2Join) p2Join.addEventListener('click', openTelegram);
+
+  document.getElementById('shareBtn').onclick = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: document.title,
+        url: window.location.href
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+});
+
+setupRotation();
+loadData();
+setInterval(() => { if(window.__booted) renderHub(); }, 30000);
+setInterval(() => { if(window.__booted && !location.hash.includes("watch")) loadData(); }, 120000);
+</script>
+</body>
+</html>
