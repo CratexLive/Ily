@@ -166,7 +166,7 @@ button{
   color: white;
 }
 
-/* Both Telegram & Alert Modals */
+/* Modals */
 #telegramModal, #alertModal {
   position: fixed;
   inset: 0;
@@ -269,10 +269,9 @@ button{
 
 .shaka-video-container {
   width: 100% !important;
-  height: calc(100vh - 60px) !important;
+  height: 100% !important;
   position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
+  inset: 0 !important;
 }
 
 #video {
@@ -280,12 +279,6 @@ button{
   height: 100% !important;
   object-fit: contain !important;
   background: #000;
-}
-
-.shaka-video-container:fullscreen,
-.shaka-video-container:-webkit-full-screen {
-  height: 100vh !important;
-  top: 0 !important;
 }
 
 *{
@@ -318,12 +311,12 @@ button{
     <video id="video" autoplay playsinline muted></video>
 
     <!-- Back Button -->
-    <button onclick="goBackHome()" style="position:absolute; top:20px; left:20px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:8px 16px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px);">
+    <button onclick="goBackHome()" style="position:absolute; top:15px; left:15px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:6px 14px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px); font-size:13px;">
       <i class="fas fa-arrow-left"></i> Back
     </button>
 
     <!-- Floating Share Button -->
-    <button onclick="shareStream()" style="position:absolute; top:20px; right:20px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:8px 14px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px);">
+    <button onclick="shareStream()" style="position:absolute; top:15px; right:15px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:6px 12px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px); font-size:13px;">
       <i class="fas fa-share-alt"></i> Share
     </button>
   </div>
