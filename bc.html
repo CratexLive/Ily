@@ -269,9 +269,10 @@ button{
 
 .shaka-video-container {
   width: 100% !important;
-  height: 100% !important;
+  height: calc(100vh - 60px) !important;
   position: absolute !important;
-  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 #video {
@@ -536,8 +537,34 @@ async function startPlayer(streamUrl, title, matchId) {
     }
 
     activePlayer = new shaka.Player(video);
+
+    // Smooth streaming configuration
+    activePlayer.configure({
+      streaming: {
+        bufferingGoal: 30,
+        rebufferingGoal: 2,
+        bufferBehind: 30,
+        lowLatencyMode: true
+      }
+    });
+
     const container = document.querySelector(".shaka-video-container");
-    new shaka.ui.Overlay(activePlayer, container, video);
+    const ui = new shaka.ui.Overlay(activePlayer, container, video);
+
+    // Configure UI with Fullscreen button explicitly enabled
+    ui.configure({
+      controlPanelElements: [
+        'play_pause',
+        'mute',
+        'volume',
+        'time_and_duration',
+        'spacer',
+        'quality',
+        'fullscreen',
+        'overflow_menu'
+      ],
+      addSeekBar: true
+    });
 
     await activePlayer.load(streamUrl);
     
