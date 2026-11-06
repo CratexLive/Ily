@@ -267,12 +267,12 @@ button{
   height: 100vh;
 }
 
+/* Full screen par poora cover karega bina kisi extra gap ke */
 .shaka-video-container {
   width: 100% !important;
-  height: calc(100vh - 60px) !important;
+  height: 100% !important;
   position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
+  inset: 0 !important;
 }
 
 #video {
@@ -280,6 +280,16 @@ button{
   height: 100% !important;
   object-fit: contain !important;
   background: #000;
+}
+
+/* Jab Fullscreen ho toh video poori screen cover kare */
+:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+:fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
 }
 
 *{
@@ -538,20 +548,24 @@ async function startPlayer(streamUrl, title, matchId) {
 
     activePlayer = new shaka.Player(video);
 
-    // Smooth streaming configuration
+    // Bufferless & Ultra Smooth Streaming Configuration
     activePlayer.configure({
       streaming: {
-        bufferingGoal: 30,
-        rebufferingGoal: 2,
+        bufferingGoal: 60,
+        rebufferingGoal: 1,
         bufferBehind: 30,
-        lowLatencyMode: true
+        lowLatencyMode: true,
+        inaccurateManifestTolerance: 0
+      },
+      abr: {
+        enabled: true,
+        defaultBandwidthEstimate: 5000000
       }
     });
 
     const container = document.querySelector(".shaka-video-container");
     const ui = new shaka.ui.Overlay(activePlayer, container, video);
 
-    // Configure UI with Fullscreen button explicitly enabled
     ui.configure({
       controlPanelElements: [
         'play_pause',
