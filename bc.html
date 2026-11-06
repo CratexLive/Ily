@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>CRICXCRATE - LIVE</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- SHAKA PLAYER UI CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
+<!-- SHAKA PLAYER UI JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
+
+<style>
+body{
+  background:#0a0f1c;
+  font-family:'Poppins',sans-serif;
+  color:#edf2f7;
+  margin:0;
+  padding:0;
+  overflow-x:hidden;
+}
+
+button{
+  font-family:'Poppins',sans-serif;
+}
+
+.match-tile{
+  background:#131d2f;
+  border-radius:32px;
+  border:1px solid #253247;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 15px 30px -10px rgba(0,0,0,0.8);
+  transition:.25s;
+}
+
+.match-tile:hover{
+  background:#17253b;
+  border-color:#3b82f6;
+  transform:scale(1.02) translateY(-4px);
+  box-shadow:0 25px 40px -8px #1e3a8a40;
+}
+
+.img-wrapper{
+  overflow:hidden;
+  height:210px;
+  position:relative;
+}
+
+.match-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.live-badge{
+  background:#b91c1c;
+  color:white;
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:20px;
+  position:absolute;
+  top:12px;
+  left:12px;
+  animation:liveBlink 1s infinite;
+}
+
+@keyframes liveBlink{
+  0%{opacity:1;}
+  50%{opacity:0.3;}
+  100%{opacity:1;}
+}
+
+.scheduled-badge{
+  background:rgba(0,0,0,.6);
+  color:white;
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:20px;
+  position:absolute;
+  top:12px;
+  left:12px;
+}
+
+.watch-btn{
+  background:#2563eb;
+  border-radius:50px;
+  padding:12px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-top:12px;
+  cursor:pointer;
+}
+
+.watch-btn:hover{
+  background:#1d4ed8;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 380px;
+  background: linear-gradient(145deg, #131d2f, #0d1522);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 28px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  transform: translateY(20px) scale(0.95);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.quality-item {
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: .2s;
+}
+
+.quality-item:hover {
+  background: #2563eb;
+  color: white;
+}
+
+/* Both Telegram & Alert Modals */
+#telegramModal, #alertModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s ease, visibility 1s ease;
+}
+
+#telegramModal.active, #alertModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+#telegramModal .modal-content, #alertModal .modal-content {
+  width: 90%;
+  max-width: 380px;
+  background: linear-gradient(145deg, #131d2f, #0d1522);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 28px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(37, 99, 235, 0.15);
+  transform: translateY(20px) scale(0.95);
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+#telegramModal.active .modal-content, #alertModal.active .modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+#toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #10b981;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  z-index: 3000;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+#toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.match-time{
+  font-size:13px;
+  color:#9ca3af;
+  margin-top:6px;
+}
+
+#playerView {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+}
+
+.shaka-video-container {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+#video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: #000;
+}
+
+*{
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
+</head>
+
+<body>
+
+<!-- VIEW 1: HOME / MATCH LIST -->
+<div id="homeView" class="p-5 max-w-7xl mx-auto">
+  <div class="text-center mt-4 mb-8">
+    <div class="inline-flex items-center justify-center gap-3 bg-[#131d2f] py-3 px-7 rounded-full border border-blue-900/50">
+      <span class="text-3xl font-black tracking-tight text-white">CricXCrate</span>
+    </div>
+    <p class="text-gray-500 text-sm mt-3 tracking-wide">LIVE STREAMING</p>
+  </div>
+
+  <div id="matches-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-6"></div>
+</div>
+
+<!-- VIEW 2: VIDEO PLAYER VIEW -->
+<div id="playerView">
+  <div class="shaka-video-container" data-shaka-player>
+    <video id="video" autoplay playsinline muted></video>
+
+    <!-- Back Button -->
+    <button onclick="goBackHome()" style="position:absolute; top:20px; left:20px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:8px 16px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px);">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+
+    <!-- Floating Share Button -->
+    <button onclick="shareStream()" style="position:absolute; top:20px; right:20px; z-index:1100; background:rgba(19, 29, 47, 0.8); border:1px solid rgba(59, 130, 246, 0.4); color:#fff; padding:8px 14px; border-radius:50px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; backdrop-filter:blur(8px);">
+      <i class="fas fa-share-alt"></i> Share
+    </button>
+
+    <!-- Loading Overlay -->
+    <div id="loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; background:#000; color:#fff; z-index:2000; font-size:18px;">
+      <div style="border:4px solid rgba(255,255,255,.2); border-top:4px solid #3b82f6; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin-bottom:12px;"></div>
+      Analyzing the video...
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast">Link copied to clipboard!</div>
+
+<!-- QUALITY MODAL -->
+<div id="qualityModal" class="modal-overlay">
+  <div class="modal-content">
+    <button onclick="closeQualityModal()" class="close-btn"><i class="fas fa-times"></i></button>
+    <h2 class="text-xl font-bold text-white mb-4">Select Quality</h2>
+    <div id="qualityList"></div>
+  </div>
+</div>
+
+<!-- FIRST POPUP: TELEGRAM JOIN MODAL -->
+<div id="telegramModal">
+  <div class="modal-content">
+    <button onclick="handleCancel()" class="close-btn"><i class="fas fa-times"></i></button>
+    <div class="relative w-16 h-16 bg-gradient-to-tr from-blue-600 to-blue-400 text-white rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl shadow-lg shadow-blue-500/30">
+      <i class="fab fa-telegram-plane"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-white mb-2">Join Our Telegram</h2>
+    <p class="text-gray-400 text-sm mb-7 leading-relaxed">Join our official Telegram channel for instant match links and updates!</p>
+    <a href="https://t.me/+CRHhd5UHD7JhNGJl" target="_blank" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 text-base no-underline">
+      <i class="fab fa-telegram text-xl"></i> JOIN NOW
+    </a>
+  </div>
+</div>
+
+<!-- SECOND POPUP: ALERT MODAL -->
+<div id="alertModal">
+  <div class="modal-content">
+    <button onclick="closeAlertModal()" class="close-btn"><i class="fas fa-times"></i></button>
+    <div class="relative w-16 h-16 bg-gradient-to-tr from-red-600 to-orange-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl shadow-lg shadow-red-500/30">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-white mb-2">Channel Required</h2>
+    <p class="text-gray-400 text-sm mb-7 leading-relaxed">You must join our Telegram channel to watch the match without interruptions!</p>
+    <a href="https://t.me/+CRHhd5UHD7JhNGJl" target="_blank" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 text-base no-underline">
+      <i class="fab fa-telegram text-xl"></i> JOIN NOW
+    </a>
+  </div>
+</div>
+
+<script>
+const DATA_URL = 'https://sportlink-fancode10.pages.dev/fan.json';
+const container = document.getElementById("matches-container");
+
+let allMatches = [];
+let currentMatchTitle = '';
+let currentMatchId = '';
+let activePlayer = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    document.getElementById('telegramModal').classList.add('active');
+  }, 200);
+
+  fetch(DATA_URL)
+    .then(res => res.json())
+    .then(data => {
+      allMatches = data.matches || [];
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const matchIdParam = urlParams.get('id');
+
+      if (matchIdParam) {
+        const foundMatch = allMatches.find(m => m.match_id === matchIdParam);
+        if (foundMatch) {
+          const streams = foundMatch.auto_streams && foundMatch.auto_streams.ENGLISH && foundMatch.auto_streams.ENGLISH.streams;
+          if (streams) {
+            currentMatchTitle = foundMatch.title || "Live Match";
+            currentMatchId = foundMatch.match_id;
+            const targetStream = streams['720p'] || streams['1080p'] || streams['480p'] || Object.values(streams)[0];
+            startPlayer(targetStream, currentMatchTitle, currentMatchId);
+            return;
+          }
+        }
+      }
+
+      renderMatches(allMatches);
+    })
+    .catch(() => {
+      container.innerHTML = "<p class='text-center col-span-full text-gray-400'>Failed to load matches</p>";
+    });
+});
+
+function handleCancel() {
+  const telegramModal = document.getElementById('telegramModal');
+  telegramModal.classList.remove('active');
+
+  setTimeout(() => {
+    telegramModal.style.display = 'none';
+    const alertModal = document.getElementById('alertModal');
+    alertModal.classList.add('active');
+  }, 200);
+}
+
+function closeAlertModal() {
+  const alertModal = document.getElementById('alertModal');
+  alertModal.classList.remove('active');
+  setTimeout(() => {
+    alertModal.style.display = 'none';
+  }, 500);
+}
+
+function showToast(msg = "Link copied to clipboard!") {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+function renderMatches(matches) {
+  container.innerHTML = "";
+
+  matches.sort((a, b) => {
+    const aLive = (a.status || "").toUpperCase() === "LIVE";
+    const bLive = (b.status || "").toUpperCase() === "LIVE";
+    return bLive - aLive;
+  });
+
+  matches.forEach((m, index) => {
+    const isLive = (m.status || "").toUpperCase() === "LIVE";
+    const img = m.image || "https://www.fancode.com/skillup-uploads/cms-media/Cricket_Fallback_Old_match-card.jpg";
+    const exactTime = m.startTime || (isLive ? "Streaming Live" : "Soon");
+    const card = document.createElement("div");
+    card.className = "match-tile";
+
+    let actionButton = isLive 
+      ? `<div onclick='openQuality(${index})' class="watch-btn"><i class="fas fa-play"></i> WATCH NOW</div>`
+      : `<div class="watch-btn" style="background:#334155; opacity:0.7; cursor:not-allowed;"><i class="far fa-clock"></i> NOT LIVE</div>`;
+
+    card.innerHTML = `
+      <div class="img-wrapper">
+        <img src="${img}" class="match-img">
+        ${isLive
+          ? '<span class="live-badge"><i class="fas fa-circle"></i> LIVE</span>'
+          : '<span class="scheduled-badge"><i class="far fa-calendar"></i> SCHEDULED</span>'}
+      </div>
+      <div class="p-5 flex flex-col flex-1">
+        <h3 class="text-xl font-bold">${m.title || 'Match'}</h3>
+        <div class="text-sm text-gray-400 mt-2">${m.tournament || ''}</div>
+        <div class="match-time"><i class="far fa-clock text-blue-400 mr-1"></i> ${exactTime}</div>
+        <div class="mt-auto pt-3">${actionButton}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function openQuality(index) {
+  const match = allMatches[index];
+  const streams = match.auto_streams && match.auto_streams.ENGLISH && match.auto_streams.ENGLISH.streams;
+  if (!streams || Object.keys(streams).length === 0) {
+    alert("Stream not available");
+    return;
+  }
+
+  currentMatchTitle = match.title || "Match";
+  currentMatchId = match.match_id;
+
+  const list = document.getElementById("qualityList");
+  list.innerHTML = "";
+
+  const order = ['1080p','720p','540p','480p','360p','240p'];
+  const sortedKeys = Object.keys(streams).sort((a, b) => order.indexOf(b) - order.indexOf(a));
+
+  sortedKeys.forEach(q => {
+    const btn = document.createElement("div");
+    btn.className = "quality-item";
+    btn.innerText = q;
+    btn.onclick = function () {
+      closeQualityModal();
+      startPlayer(streams[q], currentMatchTitle, currentMatchId);
+    };
+    list.appendChild(btn);
+  });
+
+  document.getElementById("qualityModal").classList.add("active");
+}
+
+function closeQualityModal() {
+  document.getElementById("qualityModal").classList.remove("active");
+}
+
+async function startPlayer(streamUrl, title, matchId) {
+  currentMatchTitle = title;
+  currentMatchId = matchId;
+
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('playerView').style.display = 'block';
+  document.getElementById('loading').style.display = 'flex';
+
+  if (matchId) {
+    const newUrl = `${window.location.pathname}?id=${matchId}`;
+    window.history.pushState({path: newUrl}, '', newUrl);
+  }
+
+  const video = document.getElementById("video");
+
+  try {
+    if (activePlayer) {
+      await activePlayer.destroy();
+      activePlayer = null;
+    }
+
+    activePlayer = new shaka.Player(video);
+    const container = document.querySelector(".shaka-video-container");
+    new shaka.ui.Overlay(activePlayer, container, video);
+
+    await activePlayer.load(streamUrl);
+    
+    video.play().catch(() => {
+      video.muted = true;
+      video.play();
+    });
+
+    video.addEventListener("playing", () => {
+      document.getElementById('loading').style.display = "none";
+    }, { once: true });
+
+  } catch(e) {
+    console.log("Shaka error:", e);
+    video.src = streamUrl;
+    video.play().catch(() => {
+      video.muted = true;
+      video.play();
+    });
+    video.addEventListener("playing", () => {
+      document.getElementById('loading').style.display = "none";
+    });
+  }
+}
+
+function goBackHome() {
+  document.getElementById('playerView').style.display = 'none';
+  document.getElementById('homeView').style.display = 'block';
+  const video = document.getElementById("video");
+  video.pause();
+  video.src = "";
+  if (activePlayer) {
+    activePlayer.destroy();
+    activePlayer = null;
+  }
+  window.history.pushState({}, '', window.location.pathname);
+}
+
+function shareStream() {
+  const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${currentMatchId}`;
+  const textToShare = `Fancode (English)\n${currentMatchTitle}\n${shareableUrl}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: 'CRICXCRATE LIVE',
+      text: textToShare,
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(textToShare).then(() => {
+      showToast();
+    });
+  }
+}
+</script>
+
+</body>
+</html>
