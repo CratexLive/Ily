@@ -15,7 +15,7 @@
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.1);--surface2:#202327;--surface3:#2A2E33;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font:400 15px/1.5 var(--body);color:var(--ink);background:var(--cream);min-height:100vh;padding-bottom:40px;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;position:relative}
 
-/* Enhanced Watery Fluid Flow Background Animation with Depth */
+/* Watery Fluid Flow Background Animation */
 body:before{content:"";position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(95,104,76,.16),transparent 45%),radial-gradient(circle at 70% 70%,rgba(0,136,204,.12),transparent 50%),radial-gradient(circle at 50% 50%,rgba(255,51,85,.07),transparent 55%);animation:wateryFlow 16s ease infinite alternate;pointer-events:none;z-index:0}
 @keyframes wateryFlow{0%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(-30px,20px) rotate(3deg) scale(1.03)}100%{transform:translate(20px,-25px) rotate(-3deg) scale(0.97)}}
 
@@ -60,6 +60,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
+/* Circle Logo with Normal Unzoomed Fit */
 .crest{width:54px;height:54px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform 0.25s ease}
 .crest:hover{transform:scale(1.05)}
 .crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface3);padding:6px}
@@ -230,19 +231,48 @@ async function fetchJson(url){
 }
 
 function normalize(data){
- const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:null);if(!list)throw Error("Expected an events array.");
- const events=[];
- list.forEach((item,index)=>{try{
-  const info=item.event||{};const st=parseDate(info.startTimeIST)||parseDate(info.startTime)||parseDate(item.startTime);if(!st)return;
-  let en=parseDate(info.endTimeIST)||parseDate(info.endTime)||parseDate(item.endTime);if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
-  const seen=new Set(),streams=[];
-  (Array.isArray(item.streams)?item.streams:[]).forEach((s,i)=>{if(!s)return;const link=String(s.link||s.url||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)||seen.has(link))return;
-   const t=String(s.type||"").toLowerCase(),dash=t==="dash"||/\.mpd(?:\?|$)/i.test(link),hls=t==="hls"||t==="0"||/\.m3u8(?:\?|$)/i.test(link);if(!dash&&!hls)return;seen.add(link);
-   streams.push({title:String(s.title||s.name||`Stream ${i+1}`).trim(),link,type:dash?"android":"ios",key:String(s.api||s.key||"").trim()});
+ try{
+  const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:[]);
+  if(!list||!Array.isArray(list))return[];
+  const events=[];
+  list.forEach((item,index)=>{
+   try{
+    if(!item)return;
+    const info=item.event||{};
+    const st=parseDate(info.startTimeIST)||parseDate(info.startTime)||parseDate(item.startTime);
+    if(!st)return;
+    let en=parseDate(info.endTimeIST)||parseDate(info.endTime)||parseDate(item.endTime);
+    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
+    const seen=new Set(),streams=[];
+    const rawStreams=Array.isArray(item.streams)?item.streams:[];
+    rawStreams.forEach((s,i)=>{
+     if(!s)return;
+     const link=String(s.link||s.url||"").split("|")[0].trim();
+     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
+     const t=String(s.type||"").toLowerCase();
+     const dash=t==="dash"||/\.mpd(?:\?|$)/i.test(link);
+     const hls=t==="hls"||t==="0"||/\.m3u8(?:\?|$)/i.test(link);
+     if(!dash&&!hls)return;
+     seen.add(link);
+     streams.push({title:String(s.title||s.name||`Stream ${i+1}`).trim(),link,type:dash?"android":"ios",key:String(s.api||s.key||"").trim()});
+    });
+    events.push({
+     id:String(item.id??index),
+     sport:String(info.category||info.name||item.cat||"Other").trim(),
+     comp:String(info.type||item.title||"").trim(),
+     a:String(info.teamA||info.home||""),
+     b:String(info.teamB||info.away||""),
+     fa:info.teamAFlag||info.homeFlag||"",
+     fb:info.teamBFlag||info.awayFlag||"",
+     st,en,streams
+    });
+   }catch(subErr){console.warn("Skipping corrupt event item",index,subErr);}
   });
-  events.push({id:String(item.id??index),sport:String(info.category||info.name||item.cat||"Other").trim(),comp:String(info.type||item.title||"").trim(),a:String(info.teamA||info.home||""),b:String(info.teamB||info.away||""),fa:info.teamAFlag||info.homeFlag||"",fb:info.teamBFlag||info.awayFlag||"",st,en,streams});
- }catch(e){console.warn("Skipping malformed event",index,e)}});
- return events;
+  return events;
+ }catch(e){
+  console.error("Normalization failure:",e);
+  return [];
+ }
 }
 
 async function loadData(){
