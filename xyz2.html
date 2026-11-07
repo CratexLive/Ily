@@ -244,7 +244,7 @@ function normalize(data){
      streams.push({
       title:name,
       link:link,
-      type:isDash?"android":"ios", // dash -> android, hls -> ios
+      type:isDash?"android":"ios",
       key:String(s.key||s.api||"").trim(),
       kid:String(s.kid||"").trim()
      });
@@ -494,7 +494,9 @@ $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]"
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
-$("backHub","click",()=>location.hash="#/");
+/* Fixed Back Button Event Listener */
+$("backHub").addEventListener("click",()=>location.hash="#/");
+
 window.addEventListener("hashchange",route);
 
 loadData();
