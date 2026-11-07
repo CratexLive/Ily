@@ -60,7 +60,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
-/* Circle Logo */
+/* Circle Logo with Normal Unzoomed Fit */
 .crest{width:54px;height:54px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform 0.25s ease}
 .crest:hover{transform:scale(1.05)}
 .crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface3);padding:6px}
@@ -169,7 +169,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 <script>
 "use strict";
 const DATA_URL="https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json";
-const TG_LINK="https://t.me/sm_iptv_bd";
+const TG_LINK="https://t.me/+lVY6VyOPZmtjOWM1";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
@@ -262,7 +262,7 @@ function normalize(data){
     events.push({
      id:String(item.id??index),
      sport:String(item.Category||info.category||"Other").trim(),
-     comp:String(info.eventName||"").trim(),
+     comp:String(item.eventName||"").trim(),
      a:String(info.teamA||""),
      b:String(info.teamB||""),
      fa:String(info.teamAFlag||""),
@@ -451,28 +451,16 @@ function route(){
  } else if(isUserAdmin) {
   showHub();
  } else {
-  stopPlayback();
-  state.currentEvent=null;
-  state.currentStreams=[];
-  $("hubView").classList.remove("active");
-  $("playerView").classList.remove("active");
-  if(!$("restrictedView")) {
-   const div = document.createElement("div");
-   div.id = "restrictedView";
-   div.style.cssText = "display:grid;place-items:center;height:100vh;background:#0D0E10;color:#fff;font-family:sans-serif;text-align:center;padding:20px;";
-   div.innerHTML = `<div><h2 style="font-size:24px;margin-bottom:10px;color:#FF3355;">Access Restricted</h2><p style="color:#9FA6AD;font-size:14px;">Please use an official match link shared from the channel.</p></div>`;
-   document.body.appendChild(div);
-  }
+  // Non-admin user without match link -> Redirect straight to Telegram instantly without warning
+  window.location.replace(TG_LINK);
  }
 }
 
 function showHub(){
- const rv=$("restrictedView"); if(rv) rv.remove();
  stopPlayback();state.currentEvent=null;state.currentStreams=[];$("playerView").classList.remove("active");$("hubView").classList.add("active");window.scrollTo(0,0);
 }
 
 async function openPlayer(id,index){
- const rv=$("restrictedView"); if(rv) rv.remove();
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
  const ev=state.events.find(e=>String(e.id)===String(id));
  if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
