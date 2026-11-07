@@ -60,7 +60,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
-/* Circle Logo with Normal Unzoomed Fit */
 .crest{width:54px;height:54px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform 0.25s ease}
 .crest:hover{transform:scale(1.05)}
 .crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface3);padding:6px}
@@ -186,7 +185,6 @@ function isAdmin() {
     return localStorage.getItem("fc_admin_auth") === "true";
 }
 
-// Immediate fast redirection check before anything loads if not admin & no match link
 if (!isAdmin() && !location.hash.includes("watch?id=")) {
     window.location.replace(TG_LINK);
 }
@@ -267,7 +265,7 @@ function normalize(data){
     events.push({
      id:String(item.id??index),
      sport:String(item.Category||info.category||"Other").trim(),
-     comp:String(info.eventName||"").trim(),
+     comp:String(item.eventName||"").trim(),
      a:String(info.teamA||""),
      b:String(info.teamB||""),
      fa:String(info.teamAFlag||""),
@@ -363,7 +361,16 @@ function showToast(message,kind="info",ms=3500){
  el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);if(ms)toastTimer=setTimeout(()=>el.classList.remove("show"),ms);
 }
 
-function getClearKey(record){const raw=String(record.key||"").trim();if(!raw.includes(":"))return null;const p=raw.split(":");if(p.length<2)return null;const kid=p.shift().trim().replace(/^0x/i,"").toLowerCase(),key=p.join(":").trim().replace(/^0x/i,"").toLowerCase();return /^[0-9a-f]+$/.test(kid)&&/^[0-9a-f]+$/.test(key)?{keyId:kid,key}:null}
+function getClearKey(record){
+ const kid=String(record.kid||"").trim().toLowerCase();
+ const key=String(record.key||"").trim().toLowerCase();
+ if(kid&&key&&/^[0-9a-f]+$/.test(kid)&&/^[0-9a-f]+$/.test(key))return{keyId:kid,key};
+ const raw=String(record.key||"").trim();
+ if(!raw.includes(":"))return null;const p=raw.split(":");if(p.length<2)return null;
+ const parsedKid=p.shift().trim().replace(/^0x/i,"").toLowerCase();
+ const parsedKey=p.join(":").trim().replace(/^0x/i,"").toLowerCase();
+ return /^[0-9a-f]+$/.test(parsedKid)&&/^[0-9a-f]+$/.test(parsedKey)?{keyId:parsedKid,key:parsedKey}:null;
+}
 
 async function destroyPlayer(){
  if(overlay){try{overlay.destroy()}catch(e){}overlay=null}
@@ -374,6 +381,7 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
+/* Enhanced Robust Error-Handling & Fallback Shaka / Native Player Engine */
 async function mountShaka(record,token){
  if(!window.shaka)throw Error("Shaka Player library did not load.");
  shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
@@ -390,21 +398,39 @@ async function mountShaka(record,token){
     bufferBehind:15,
     lowLatencyMode:true,
     inaccurateManifestTolerance:0,
-    retryParameters:{maxAttempts:6,baseDelay:300,fuzzFactor:.5,timeout:10000}
+    retryParameters:{maxAttempts:4,baseDelay:300,fuzzFactor:.5,timeout:8000}
   },
   abr:{enabled:true,defaultBandwidthEstimate:3500000,switchInterval:1,bandwidthUpgradeTarget:0.8,bandwidthDowngradeTarget:0.9}
  });
 
- const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
- instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",5000)});
- await instance.load(record.link);if(token!==playbackToken)return;
- try{await video.play()}catch(e){showToast("Tap Play to start the stream","",5000)}
+ const ck=getClearKey(record);
+ if(ck){
+  instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ }
+
+ instance.addEventListener("error",ev=>{
+  const e=ev.detail;
+  console.warn("Shaka warning/error encountered:",e);
+  if(token===playbackToken && e?.severity===shaka.util.Error.Severity.CRITICAL){
+   showToast("Stream error or invalid DRM key","",4000);
+  }
+ });
+
+ try {
+  await instance.load(record.link);
+ } catch(err) {
+  console.error("Shaka load exception:", err);
+  throw err;
+ }
+
+ if(token!==playbackToken)return;
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
 }
 
 async function mountNativeHls(record,token){
  const c=$("player-container");c.innerHTML="";const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
  video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:true});
- video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("This HLS stream could not be played on this device.","The stream may be unavailable or blocked by the source server.")},{once:true});
+ video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("Stream playback failed.","The stream link may be expired or blocked.")},{once:true});
  video.load();
 }
 
@@ -413,14 +439,11 @@ async function mountPlayer(record,token){
   await mountShaka(record,token);
  }catch(err){
   if(token!==playbackToken)return;
-  console.warn("Shaka playback failed, falling back:",err);
+  console.warn("Shaka playback failed entirely, switching to Native/HLS fallback:",err);
   await destroyPlayer();if(token!==playbackToken)return;
-  if(record.type==="ios"&&/iPhone|iPad|iPod/i.test(navigator.userAgent)&&$("player-container")){
-   showToast("Trying native HLS playback","",2500);
-   await mountNativeHls(record,token);
-  } else {
-   throw err;
-  }
+  
+  // Auto-fallback to native or direct video handling if Shaka/DRM fails
+  await mountNativeHls(record,token);
  }
 }
 
@@ -428,7 +451,7 @@ async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check stream compatibility.")}}
 }
 
 function renderPlayerStreams(active){
