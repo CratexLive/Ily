@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Acme&family=Amaranth:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/controls.css">
 <style>
 :root{--cream:#F8EFD4;--olive:#5F684C;--white:#FFFFFF;--ink:#141414;--muted:#595959;--accent:#0088cc;--border:rgba(0,0,0,.12);--surface2:#F0E4C3;--surface3:#E4D7B2;--live:#FF3355;--soon:#D48806;--done:#5C6B80;--radius:16px;--shadow:0 12px 35px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);--shadow-deep:0 20px 50px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);--display:'Space Grotesk','Inter',sans-serif;--body:'Inter',system-ui,sans-serif}
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.1);--surface2:#202327;--surface3:#2A2E33;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
@@ -76,9 +75,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .player-top{display:flex;align-items:center;gap:14px;padding:24px 0 16px;flex-wrap:wrap}.icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--white);display:grid;place-items:center;font-size:18px;box-shadow:var(--shadow);flex:none;cursor:pointer;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275)}.icon-btn:hover{border-color:var(--olive);color:var(--olive);background:var(--surface2);transform:translateY(-2px)}.player-meta{flex:1;min-width:0}.player-title{font:700 clamp(18px,3vw,24px)/1.15 var(--display);overflow-wrap:anywhere}.player-sub{color:var(--muted);font-size:13px;margin-top:3px;font-weight:500}
 .screen{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:16/9;width:100%;max-width:min(980px,calc((100vh - 220px)*16/9));margin:0 auto;border:1px solid var(--border);box-shadow:0 25px 60px rgba(0,0,0,.25)}
 #player-container{position:absolute;inset:0;background:#000;overflow:hidden}
-#player-container video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
-.quality-toast{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.88);color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.4)}
-.quality-toast.show{opacity:1}
+#player-container iframe{width:100%;height:100%;border:0;background:#000;display:block}
 .player-sub-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:14px auto 26px;flex-wrap:wrap;padding:0 2px}.player-brand-info{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}.player-brand-info span{color:var(--olive)}.player-actions-group{display:flex;align-items:center;gap:8px}
 .player-tg-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:700;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;box-shadow:0 6px 18px rgba(0,136,204,.35);transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275)}
 .player-tg-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}.player-tg-btn svg{width:14px;height:14px;fill:currentColor}
@@ -89,7 +86,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .stream-btn:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--shadow-deep)}.stream-btn.active{border-color:var(--olive);background:var(--surface2);box-shadow:0 0 0 2px var(--olive) inset, var(--shadow)}
 .stream-btn .title{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stream-btn .tags{display:flex;align-items:center;gap:8px;flex:none}
 .type-badge{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--surface3);color:#555;text-transform:uppercase}
-.type-badge.android{color:#0088cc;background:rgba(0,136,204,.12)}.type-badge.ios{color:#D48806;background:rgba(212,136,6,.12)}
+.type-badge.stream{color:#0088cc;background:rgba(0,136,204,.12)}
 .state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;text-align:center}.state h3{font:600 18px var(--display)}.state p{color:var(--muted);font-size:13.5px;max-width:440px}.err-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,51,85,.12);color:var(--live);display:grid;place-items:center;font-size:20px;box-shadow:0 6px 18px rgba(255,51,85,.2)}
 .screen-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;background:#080808;color:#fff;font:600 15px var(--body);z-index:5}.screen-msg small{font-weight:400;color:#aaa;max-width:90%;overflow-wrap:anywhere}
 
@@ -163,7 +160,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/shaka-player.ui.min.js"></script>
 <script>
 "use strict";
 const DATA_URLS = [
@@ -172,7 +168,6 @@ const DATA_URLS = [
 const TG_LINK="https://t.me/+lVY6VyOPZmtjOWM1";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
-let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -231,17 +226,13 @@ function parseEventsFromData(data){
     if(!/^https?:\/\//i.test(link) || seen.has(link))return;
     seen.add(link);
     const sName = String(s.name || `Stream ${i+1}`).trim();
-    const isDash = /\.mpd(?:\?|$)/i.test(link);
     streams.push({
      title: sName,
      link,
-     type: isDash ? "android" : "ios",
-     key: "",
-     kid: ""
+     type: "stream"
     });
    });
 
-   // Split team names from title if possible (e.g. "Team A vs Team B")
    let teamA = "", teamB = "";
    const parts = matchTitle.split(/\bvs\b/i);
    if(parts.length === 2){
@@ -348,53 +339,25 @@ function crest(url,name){
  return `<div class="crest"><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<span>${esc(initials)}</span>'"></div>`;
 }
 
-function showToast(message,kind="info",ms=3500){
- let el=$("qualityToast");if(!el){el=document.createElement("div");el.id="qualityToast";el.className="quality-toast";$("player-container").appendChild(el)}
- el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);if(ms)toastTimer=setTimeout(()=>el.classList.remove("show"),ms);
-}
-
-async function destroyPlayer(){
- if(overlay){try{overlay.destroy()}catch(e){}overlay=null}
- if(player){try{await player.destroy()}catch(e){}player=null}
- const c=$("player-container");if(c)c.innerHTML="";
-}
-
-async function stopPlayback(){playbackToken++;await destroyPlayer()}
-function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
-
-async function mountShaka(record,token){
- if(!window.shaka)throw Error("Shaka Player library did not load.");
- shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
- const c=$("player-container");c.innerHTML="";
- const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
- const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
- ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"]});
-
- instance.configure({
-  streaming:{
-    bufferingGoal:30,
-    rebufferingGoal:1,
-    bufferBehind:15,
-    lowLatencyMode:true,
-    retryParameters:{maxAttempts:6,baseDelay:300,timeout:10000}
-  }
- });
-
- await instance.load(record.link);if(token!==playbackToken)return;
- try{await video.play()}catch(e){showToast("Tap Play to start the stream","",5000)}
-}
-
-async function playRecord(record,index){
- if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
- const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
- const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountShaka(record,token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
+function playRecord(record,index){
+ if(!record)return;
+ document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
+ const c=$("player-container");
+ c.innerHTML=`<iframe src="${esc(record.link)}" allowfullscreen="true" allow="encrypted-media; autoplay; picture-in-picture"></iframe>`;
 }
 
 function renderPlayerStreams(active){
- const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';return}
- box.innerHTML=state.currentStreams.map((s,i)=>`<button class="stream-btn ${i===active?"active":""}" data-player-stream="${i}" type="button"><span class="title">${esc(s.title)}</span><span class="tags"><span class="type-badge ${s.type}">${esc(s.type)}</span></span></button>`).join("");
+ const box=$("streams");
+ if(!state.currentStreams.length){
+  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';
+  return;
+ }
+ box.innerHTML=state.currentStreams.map((s,i)=>`
+  <button class="stream-btn ${i===active?"active":""}" data-player-stream="${i}" type="button">
+   <span class="title">${esc(s.title)}</span>
+   <span class="tags"><span class="type-badge stream">Stream ${i+1}</span></span>
+  </button>
+ `).join("");
 }
 
 function route(){
@@ -416,16 +379,40 @@ function showHub(){
   window.location.replace(TG_LINK);
   return;
  }
- stopPlayback();state.currentEvent=null;state.currentStreams=[];$("playerView").classList.remove("active");$("hubView").classList.add("active");window.scrollTo(0,0);
+ $("player-container").innerHTML="";
+ state.currentEvent=null;
+ state.currentStreams=[];
+ $("playerView").classList.remove("active");
+ $("hubView").classList.add("active");
+ window.scrollTo(0,0);
 }
 
-async function openPlayer(id,index){
- $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
+function openPlayer(id,index){
+ $("hubView").classList.remove("active");
+ $("playerView").classList.add("active");
+ window.scrollTo(0,0);
+ 
  const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
- state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
- $("playerTitle").textContent=ev.title||"FootxCrate Player";$("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams for this match.");
+ if(!ev){
+  state.currentEvent=null;
+  state.currentStreams=[];
+  $("playerTitle").textContent="Match not found";
+  $("playerSub").textContent="";
+  $("streams").innerHTML="";
+  $("player-container").innerHTML=`<div class="screen-msg">This match is no longer available.</div>`;
+  return;
+ }
+ 
+ state.currentEvent=ev;
+ state.currentStreams=ev.streams||[];
+ state.currentIndex=index;
+ $("playerTitle").textContent=ev.title||"FootxCrate Player";
+ $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
+ 
+ renderPlayerStreams(index);
+ const rec=state.currentStreams[index];
+ if(rec) playRecord(rec,index);
+ else $("player-container").innerHTML=`<div class="screen-msg">No playable streams for this match.</div>`;
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
@@ -450,7 +437,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("popupJoinBtn").addEventListener("click",()=>{const w=window.open(TG_LINK,"_blank","noopener");if(!w)location.href=TG_LINK;closePopup()});
  $("popupSkipBtn").addEventListener("click",closePopup);
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
- $("shareBtn").addEventListener("click",async()=>{try{if(navigator.source)await navigator.share({title:document.title,url:location.href});else{await navigator.clipboard.writeText(location.href);showToast("Page link copied","",2500)}}catch(e){}});
+ $("shareBtn").addEventListener("click",async()=>{try{if(navigator.share)await navigator.share({title:document.title,url:location.href});else{await navigator.clipboard.writeText(location.href);alert("Page link copied")}}catch(e){}});
 });
 
 $("list").addEventListener("click",e=>{
@@ -491,8 +478,6 @@ loadData();
 setInterval(()=>{
  if(window.__booted&&!location.hash.includes("watch")&&!document.hidden){loadData()}
 },120000);
-
-window.addEventListener("pagehide",()=>{stopPlayback()});
 </script>
 </body>
 </html>
