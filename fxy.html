@@ -15,7 +15,7 @@
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.1);--surface2:#202327;--surface3:#2A2E33;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font:400 15px/1.5 var(--body);color:var(--ink);background:var(--cream);min-height:100vh;padding-bottom:40px;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;position:relative}
 
-/* Watery Fluid Flow Background Animation */
+/* Enhanced Watery Fluid Flow Background Animation with Depth */
 body:before{content:"";position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(95,104,76,.16),transparent 45%),radial-gradient(circle at 70% 70%,rgba(0,136,204,.12),transparent 50%),radial-gradient(circle at 50% 50%,rgba(255,51,85,.07),transparent 55%);animation:wateryFlow 16s ease infinite alternate;pointer-events:none;z-index:0}
 @keyframes wateryFlow{0%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(-30px,20px) rotate(3deg) scale(1.03)}100%{transform:translate(20px,-25px) rotate(-3deg) scale(0.97)}}
 
@@ -60,9 +60,9 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
-.crest{width:54px;height:54px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform 0.25s ease}
-.crest:hover{transform:scale(1.05)}
-.crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface3);padding:6px}
+.crest{width:58px;height:58px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 6px 18px rgba(0,0,0,.1),0 2px 4px rgba(0,0,0,.05);transition:transform 0.25s cubic-bezier(0.175,0.885,0.32,1.275)}
+.crest:hover{transform:scale(1.08)}
+.crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.3);background:var(--surface3)}
 
 .versus{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0 4px}
 .kickoff-time{font:700 18px/1 var(--display);color:var(--olive);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -265,7 +265,7 @@ function normalize(data){
     events.push({
      id:String(item.id??index),
      sport:String(item.Category||info.category||"Other").trim(),
-     comp:String(item.eventName||"").trim(),
+     comp:String(info.eventName||"").trim(),
      a:String(info.teamA||""),
      b:String(info.teamB||""),
      fa:String(info.teamAFlag||""),
@@ -381,13 +381,13 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
-/* Enhanced Robust Error-Handling & Fallback Shaka / Native Player Engine */
+/* Smart Playback Engine with Automatic HLS vs DASH Detection */
 async function mountShaka(record,token){
  if(!window.shaka)throw Error("Shaka Player library did not load.");
- shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
+ shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
  const c=$("player-container");c.innerHTML="";
  const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
+ const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Cancelled.");
  const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
  ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"],seekBarColors:{base:"#777",buffered:"#D48806",played:"#0088cc",ad:"#fff"}});
 
@@ -397,10 +397,9 @@ async function mountShaka(record,token){
     rebufferingGoal:1,
     bufferBehind:15,
     lowLatencyMode:true,
-    inaccurateManifestTolerance:0,
-    retryParameters:{maxAttempts:4,baseDelay:300,fuzzFactor:.5,timeout:8000}
+    retryParameters:{maxAttempts:3,baseDelay:300,fuzzFactor:.5,timeout:7000}
   },
-  abr:{enabled:true,defaultBandwidthEstimate:3500000,switchInterval:1,bandwidthUpgradeTarget:0.8,bandwidthDowngradeTarget:0.9}
+  abr:{enabled:true,defaultBandwidthEstimate:3500000}
  });
 
  const ck=getClearKey(record);
@@ -408,54 +407,46 @@ async function mountShaka(record,token){
   instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
  }
 
- instance.addEventListener("error",ev=>{
-  const e=ev.detail;
-  console.warn("Shaka warning/error encountered:",e);
-  if(token===playbackToken && e?.severity===shaka.util.Error.Severity.CRITICAL){
-   showToast("Stream error or invalid DRM key","",4000);
-  }
- });
-
- try {
-  await instance.load(record.link);
- } catch(err) {
-  console.error("Shaka load exception:", err);
-  throw err;
- }
-
+ await instance.load(record.link);
  if(token!==playbackToken)return;
- try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
+ try{await video.play()}catch(e){showToast("Tap Play to start stream","",3000)}
 }
 
 async function mountNativeHls(record,token){
- const c=$("player-container");c.innerHTML="";const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
- video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:true});
- video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("Stream playback failed.","The stream link may be expired or blocked.")},{once:true});
+ const c=$("player-container");c.innerHTML="";
+ const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
+ video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>{})},{once:true});
+ video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("Stream playback failed.","The link might be offline or blocked.")},{once:true});
  video.load();
 }
 
 async function mountPlayer(record,token){
- try{
-  await mountShaka(record,token);
- }catch(err){
-  if(token!==playbackToken)return;
-  console.warn("Shaka playback failed entirely, switching to Native/HLS fallback:",err);
-  await destroyPlayer();if(token!==playbackToken)return;
-  
-  // Auto-fallback to native or direct video handling if Shaka/DRM fails
-  await mountNativeHls(record,token);
+ const isHls = /\.m3u8(?:\?|$)/i.test(record.link);
+ if(isHls) {
+  // Directly use native video/HLS playback for .m3u8 to prevent Shaka CORS/Manifest errors
+  await mountNativeHls(record, token);
+ } else {
+  try {
+   await mountShaka(record, token);
+  } catch(err) {
+   if(token!==playbackToken)return;
+   console.warn("Shaka failed, trying native fallback:", err);
+   await destroyPlayer();
+   if(token!==playbackToken)return;
+   await mountNativeHls(record, token);
+  }
  }
 }
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
- const link=String(record.link||"").trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check stream compatibility.")}}
+ const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){console.error(e);showPlayerError("Unable to play stream.",e.message||"Format not supported.")}}
 }
 
 function renderPlayerStreams(active){
- const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';return}
+ const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams found.</p></div>';return}
  box.innerHTML=state.currentStreams.map((s,i)=>`<button class="stream-btn ${i===active?"active":""}" data-player-stream="${i}" type="button"><span class="title">${esc(s.title)}</span><span class="tags"><span class="type-badge ${s.type}">${esc(s.type)}</span></span></button>`).join("");
 }
 
@@ -469,10 +460,10 @@ function showHub(){stopPlayback();state.currentEvent=null;state.currentStreams=[
 async function openPlayer(id,index){
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
  const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
+ if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("Match not available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
  $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.comp||"FootxCrate Player";$("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams for this match.");
+ renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams.");
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
