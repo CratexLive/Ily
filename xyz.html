@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FBF2DA">
+<meta name="theme-color" content="#111214">
 <meta name="referrer" content="no-referrer">
 <title>FootxCrate — Live Sports Streaming Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -143,7 +143,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 <header class="header">
   <div class="brand"><div class="brand-mark">FC</div><div class="brand-text"><h1>FootxCrate</h1><p>Live sports streaming hub</p></div></div>
   <div class="header-actions">
-    <button class="icon-action-btn" id="themeToggle" aria-label="Toggle Theme">🌙</button>
+    <button class="icon-action-btn" id="themeToggle" aria-label="Toggle Theme">☀️</button>
     <div class="live-pill"><span class="dot"></span> Live</div><div class="clock" id="clock"></div>
     <a class="join-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span>Join Channel</span></a>
   </div>
@@ -387,7 +387,6 @@ async function mountNativeHls(record,token){
 
 async function mountPlayer(record,token){
  try{
-  // Always try Shaka mode first as requested for first-time / default behavior
   await mountShaka(record,token);
  }catch(err){
   if(token!==playbackToken)return;
@@ -433,8 +432,11 @@ async function openPlayer(id,index){
 function closePopup(){$("popup").classList.remove("visible")}
 
 document.addEventListener("DOMContentLoaded",()=>{
- const savedTheme=localStorage.getItem("fc_theme")||"light";
- if(savedTheme==="dark"){document.documentElement.setAttribute("data-theme","dark");$("themeToggle").textContent="☀️";}
+ // Enforce Dark Mode on first open if not explicitly saved by user
+ const savedTheme=localStorage.getItem("fc_theme")||"dark";
+ document.documentElement.setAttribute("data-theme",savedTheme);
+ $("themeToggle").textContent=savedTheme==="dark"?"☀️":"🌙";
+
  $("themeToggle").addEventListener("click",toggleTheme);
 
  const popup=$("popup");
