@@ -91,7 +91,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .stream-btn:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--shadow-deep)}.stream-btn.active{border-color:var(--olive);background:var(--surface2);box-shadow:0 0 0 2px var(--olive) inset, var(--shadow)}
 .stream-btn .title{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stream-btn .tags{display:flex;align-items:center;gap:8px;flex:none}
 .type-badge{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--surface3);color:#555;text-transform:uppercase}
-.type-badge.dash{color:#0088cc;background:rgba(0,136,204,.12)}.type-badge.hls{color:#D48806;background:rgba(212,136,6,.12)}
+.type-badge.android{color:#0088cc;background:rgba(0,136,204,.12)}.type-badge.ios{color:#D48806;background:rgba(212,136,6,.12)}
 .state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;text-align:center}.state h3{font:600 18px var(--display)}.state p{color:var(--muted);font-size:13.5px;max-width:440px}.err-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,51,85,.12);color:var(--live);display:grid;place-items:center;font-size:20px;box-shadow:0 6px 18px rgba(255,51,85,.2)}
 .screen-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;background:#080808;color:#fff;font:600 15px var(--body);z-index:5}.screen-msg small{font-weight:400;color:#aaa;max-width:90%;overflow-wrap:anywhere}
 
@@ -244,7 +244,7 @@ function normalize(data){
      streams.push({
       title:name,
       link:link,
-      type:isDash?"dash":"hls",
+      type:isDash?"android":"ios", // dash -> android, hls -> ios
       key:String(s.key||s.api||"").trim(),
       kid:String(s.kid||"").trim()
      });
@@ -494,8 +494,7 @@ $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]"
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
-$("backHub").addEventListener("click",()=>location.hash="#/");
-
+$("backHub","click",()=>location.hash="#/");
 window.addEventListener("hashchange",route);
 
 loadData();
