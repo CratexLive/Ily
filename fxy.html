@@ -60,7 +60,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
-/* Circle Logo with Normal Unzoomed Fit */
 .crest{width:54px;height:54px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;position:relative;font-weight:700;font-size:13px;color:var(--muted);flex:none;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform 0.25s ease}
 .crest:hover{transform:scale(1.05)}
 .crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface3);padding:6px}
@@ -186,6 +185,7 @@ function isAdmin() {
     return localStorage.getItem("fc_admin_auth") === "true";
 }
 
+// Instant check: Non-admin users without direct watch link get redirected instantly to Telegram
 if (!isAdmin() && !location.hash.includes("watch?id=")) {
     window.location.replace(TG_LINK);
 }
@@ -428,11 +428,27 @@ function renderPlayerStreams(active){
 }
 
 function route(){
- const raw=location.hash.replace(/^#\/?/,"");const[path,query]=raw.split("?");const p=new URLSearchParams(query||"");
- if(path==="watch")openPlayer(p.get("id"),Math.max(0,Number(p.get("stream")||0)));else showHub();
+ const raw=location.hash.replace(/^#\/?/,"");
+ const[path,query]=raw.split("?");
+ const p=new URLSearchParams(query||"");
+ 
+ // If non-admin tries to go home or clear watch hash, redirect instantly to Telegram
+ if(!isAdmin() && (path !== "watch" || !p.get("id"))) {
+  window.location.replace(TG_LINK);
+  return;
+ }
+
+ if(path==="watch") openPlayer(p.get("id"),Math.max(0,Number(p.get("stream")||0)));
+ else showHub();
 }
 
-function showHub(){stopPlayback();state.currentEvent=null;state.currentStreams=[];$("playerView").classList.remove("active");$("hubView").classList.add("active");window.scrollTo(0,0)}
+function showHub(){
+ if(!isAdmin()) {
+  window.location.replace(TG_LINK);
+  return;
+ }
+ stopPlayback();state.currentEvent=null;state.currentStreams=[];$("playerView").classList.remove("active");$("hubView").classList.add("active");window.scrollTo(0,0);
+}
 
 async function openPlayer(id,index){
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
@@ -491,7 +507,14 @@ $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]"
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
-$("backHub").addEventListener("click",()=>location.hash="#/");
+// Intercept back button click from player view for non-admins to redirect to Telegram instantly
+$("backHub").addEventListener("click",()=>{
+ if (!isAdmin()) {
+  window.location.replace(TG_LINK);
+ } else {
+  location.hash="#/";
+ }
+});
 
 window.addEventListener("hashchange",route);
 
