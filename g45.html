@@ -235,31 +235,26 @@ function toggleTheme(){
  $("themeToggle").textContent=next==="dark"?"☀️":"🌙";
 }
 
-function parseDate(value, isBdt=false){
+function parseDate(value){
  if(!value)return null;let s=String(value).trim();if(!s||s==="null"||s==="undefined")return null;
  const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
  
  const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
  if(m1){
   const[,y,mo,d,h,mi,se="00"]=m1;
-  let dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);
-  if(isBdt && !ist) dt = new Date(dt.getTime() - (30 * 60 * 1000)); // BDT to IST offset conversion (-30 mins)
+  const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);
   if(!isNaN(dt))return dt;
  }
  
  const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
  if(m2){
   const[,d,mo,y,h,mi,se]=m2;
-  let dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);
-  if(isBdt) dt = new Date(dt.getTime() - (30 * 60 * 1000));
+  const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);
   if(!isNaN(dt))return dt;
  }
  
  const dt=new Date(s);
- if(!isNaN(dt)){
-  if(isBdt) return new Date(dt.getTime() - (30 * 60 * 1000));
-  return dt;
- }
+ if(!isNaN(dt))return dt;
  return null;
 }
 
@@ -284,15 +279,15 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
-function parseEventsFromData(data, sourceUrl=""){
+function parseEventsFromData(data){
  if(!data)return[];
  
- // Intelligent parser for Willow JSON format (times are in BDT)
+ // Intelligent parser for Willow JSON format
  if(data.Matches && Array.isArray(data.Matches)){
   const events=[];
   data.Matches.forEach(m=>{
    try{
-    const st=parseDate(m.time, true); // True flag applies BDT to IST timezone offset conversion
+    const st=parseDate(m.time);
     const en=new Date(st ? st.getTime()+3*3600000 : Date.now()+3*3600000);
     const streams=[];
     
@@ -361,9 +356,9 @@ function parseEventsFromData(data, sourceUrl=""){
   try{
    if(!item)return;
    const info=item.event||item.eventInfo||{};
-   const st=parseDate(info.startTimeIST||info.startTime||item.startTime, false);
+   const st=parseDate(info.startTimeIST||info.startTime||item.startTime);
    if(!st)return;
-   let en=parseDate(info.endTimeIST||info.endTime||item.endTime, false);
+   let en=parseDate(info.endTimeIST||info.endTime||item.endTime);
    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
    
    const seen=new Set(),streams=[];
@@ -408,18 +403,17 @@ async function loadData(){
  try{
   const results=await Promise.all(DATA_URLS.map(url=>fetchJson(url)));
   let allEvents=[];
-  results.forEach((res, idx)=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res, DATA_URLS[idx]));});
+  results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  // Advanced Intelligent Merging: Team-name based fuzzy key with 4-hour window
+  // STRICT TEAM-NAME MERGING: Ignore time discrepancies completely, merge solely based on Team A & Team B normalized names
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const cleanA = ev.a ? ev.a.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
    const cleanB = ev.b ? ev.b.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
    
-   const teamPairKey = cleanA && cleanB ? [cleanA, cleanB].sort().join("_") : "";
-   const timeWindow = Math.floor(ev.st.getTime() / (1000 * 60 * 240)); // 4-hour window to catch minor source time shifts
-   
-   const key = teamPairKey ? `${teamPairKey}_${timeWindow}` : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
+   // Create unique key purely from sorted team pair names so timezone/time formatting never splits them
+   const teamPairKey = cleanA && cleanB ? [cleanA, cleanB].sort().join("_vs_") : "";
+   const key = teamPairKey ? teamPairKey : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
@@ -428,7 +422,7 @@ async function loadData(){
     });
     if(!existing.fa && ev.fa) existing.fa = ev.fa;
     if(!existing.fb && ev.fb) existing.fb = ev.fb;
-    if(ev.st < existing.st) existing.st = ev.st;
+    if(ev.st < existing.st) existing.st = ev.st; // keep earliest kickoff time
    }else{
     mergedMap.set(key,ev);
    }
