@@ -8,8 +8,7 @@ export async function onRequest(context) {
   }
 
   try {
-    // Extract incoming headers to forward client parameters if needed
-    const clientUserAgent = request.headers.get("user-agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+    const clientUserAgent = request.headers.get("user-agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
     const modifiedRequest = new Request(targetUrl, {
       headers: {
@@ -24,19 +23,15 @@ export async function onRequest(context) {
 
     const response = await fetch(modifiedRequest);
     
-    // Create a new response maintaining the underlying body stream
     const newResponse = new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers
     });
 
-    // Enforce CORS policies so your frontend domain can read the stream chunks
     newResponse.headers.set("Access-Control-Allow-Origin", "*");
     newResponse.headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS, POST");
     newResponse.headers.set("Access-Control-Allow-Headers", "*");
-    
-    // Prevent caching issues on live streams
     newResponse.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
 
     return newResponse;
