@@ -1,0 +1,101 @@
+<?php
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: *');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
+
+if (!isset($_GET['url']) || empty($_GET['url'])) {
+    http_response_code(400);
+    echo "URL parameter is missing";
+    exit;
+}
+
+$targetUrl = $_GET['url'];
+
+$parsedUrl = parse_url($targetUrl);
+if (!$parsedUrl || !isset($parsedUrl['scheme']) || !isset($parsedUrl['host'])) {
+    http_response_code(400);
+    echo "Invalid URL";
+    exit;
+}
+
+$baseUrl = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . (isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '') . (isset($parsedUrl['path']) ? dirname($parsedUrl['path']) : '') . '/';
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $targetUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+$headers = [];
+foreach (getallheaders() as $name => $value) {
+    if (strtolower($name) !== 'host' && strtolower($name) !== 'referer') {
+        $headers[] = "$name: $value";
+    }
+}
+if (!empty($headers)) {
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+}
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+curl_close($ch);
+
+if ($httpCode !== 200 || empty($response)) {
+    http_response_code($httpCode ? $httpCode : 500);
+    echo "Failed to fetch stream";
+    exit;
+}
+
+if ($contentType) {
+    header("Content-Type: $contentType");
+} else {
+    header("Content-Type: application/vnd.apple.mpegurl");
+}
+
+if (strpos($targetUrl, '.m3u8') !== false || (isset($contentType) && strpos($contentType, 'mpegurl') !== false)) {
+    $proxyScriptUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[PHP_SELF]";
+    
+    $lines = explode("\n", $response);
+    $output = [];
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line)) continue;
+        
+        if ($line[0] === '#') {
+            if (strpos($line, 'URI="') !== false) {
+                $line = preg_replace_callback('/URI="([^"]+)"/', function($matches) use ($baseUrl, $proxyScriptUrl) {
+                    $absoluteUri = resolveUrl($baseUrl, $matches[1]);
+                    return 'URI="' . $proxyScriptUrl . '?url=' . urlencode($absoluteUri) . '"';
+                }, $line);
+            }
+            $output[] = $line;
+        } else {
+            $absoluteUrl = resolveUrl($baseUrl, $line);
+            $output[] = $proxyScriptUrl . '?url=' . urlencode($absoluteUrl);
+        }
+    }
+    
+    echo implode("\n", $output);
+} else {
+    echo $response;
+}
+
+function resolveUrl($baseUrl, $relativeUrl) {
+    if (parse_url($relativeUrl, PHP_URL_SCHEME) != '') {
+        return $relativeUrl;
+    }
+    if ($relativeUrl[0] == '/') {
+        $parsedBase = parse_url($baseUrl);
+        return $parsedBase['scheme'] . '://' . $parsedBase['host'] . (isset($parsedBase['port']) ? ':' . $parsedBase['port'] : '') . $relativeUrl;
+    }
+    return $baseUrl . $relativeUrl;
+}
+?>
