@@ -86,7 +86,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .player-share-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:12.5px;font-weight:700;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--white);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
 .player-share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-deep)}
 
-/* Screenshot Match Banner Style */
+/* Match Banner */
 .match-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:20px auto 24px;padding:16px 20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
 .match-banner-team{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .match-banner-team.away{justify-content:flex-end;text-align:right}
@@ -99,15 +99,15 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .match-banner-timer{font-size:11.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
 .match-banner-league{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
 
-/* Live Channels Section */
+/* Live Channels Section Header */
 .channels-header{display:flex;align-items:center;justify-content:space-between;max-width:980px;margin:24px auto 12px;padding:0 2px}
 .channels-title{font:700 18px var(--display);color:var(--ink)}
 .channels-count{font-size:12.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
 .channels-count .red-dot{width:6px;height:6px;border-radius:50%;background:var(--live)}
 
-/* Screenshot matching 2-Column Clean Grid Layout for Streams */
+/* 2-Column Clean Grid Layout for Streams */
 .streams{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:980px;margin:0 auto}
-@media(max-width:650px){.streams{grid-template-columns:1fr}}
+@media(max-width:650px){.streams{grid-template-columns:repeat(2,1fr);gap:10px}}
 
 .stream-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 14px;border-radius:var(--radius);text-align:center;border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);cursor:pointer;transition:all .22s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden}
 .stream-card:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-3px);box-shadow:var(--shadow-deep)}
@@ -436,6 +436,7 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
+/* Bufferless, Low-Latency Optimized Shaka Engine */
 async function mountShaka(record,token){
  if(!window.shaka)throw Error("Shaka Player library did not load.");
  shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
@@ -447,20 +448,20 @@ async function mountShaka(record,token){
 
  instance.configure({
   streaming:{
-    bufferingGoal:30,
-    rebufferingGoal:1,
-    bufferBehind:15,
+    bufferingGoal:5,
+    rebufferingGoal:0.5,
+    bufferBehind:10,
     lowLatencyMode:true,
     inaccurateManifestTolerance:0,
-    retryParameters:{maxAttempts:6,baseDelay:300,fuzzFactor:.5,timeout:10000}
+    retryParameters:{maxAttempts:10,baseDelay:100,fuzzFactor:0.2,timeout:5000}
   },
-  abr:{enabled:true,defaultBandwidthEstimate:3500000,switchInterval:1,bandwidthUpgradeTarget:0.8,bandwidthDowngradeTarget:0.9}
+  abr:{enabled:true,defaultBandwidthEstimate:2000000,switchInterval:1}
  });
 
  const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
- instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",5000)});
+ instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",4000)});
  await instance.load(record.link);if(token!==playbackToken)return;
- try{await video.play()}catch(e){showToast("Tap Play to start the stream","",5000)}
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
 }
 
 async function mountNativeHls(record,token){
@@ -471,6 +472,11 @@ async function mountNativeHls(record,token){
 }
 
 async function mountPlayer(record,token){
+ const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
+ if(isHls && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  await mountNativeHls(record, token);
+  return;
+ }
  try{
   await mountShaka(record,token);
  }catch(err){
