@@ -240,6 +240,12 @@ function setupHLSPlayer(url){
   if(currentPlayer) { currentPlayer.destroy(); currentPlayer = null; }
 
   var playUrl = proxyUrl(url);
+  var defaultOptions = {
+    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+    settings: ['quality'],
+    autoplay: true,
+    muted: false
+  };
 
   if(Hls.isSupported() && /\.m3u8(\?|$)/i.test(url)) {
     var hls = new Hls({ autoStartLoad: true, enableWorker: true, lowLatencyMode: true });
@@ -247,8 +253,23 @@ function setupHLSPlayer(url){
     hls.loadSource(playUrl);
     hls.attachMedia($video);
 
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      currentPlayer = new Plyr($video, { autoplay: true });
+    hls.on(Hls.Events.MANIFEST_PARSED, function(_, data) {
+      var qualities = data.levels.map(function(l) { return l.height; }).filter(Boolean).sort(function(a,b){ return b-a; });
+      qualities = qualities.filter(function(v,i){ return qualities.indexOf(v) === i; });
+
+      currentPlayer = new Plyr($video, Object.assign({}, defaultOptions, qualities.length ? {
+        quality: {
+          default: qualities[0],
+          options: qualities,
+          forced: true,
+          onChange: function(q) {
+            hls.levels.forEach(function(level, index) {
+              if(level.height === q) hls.currentLevel = index;
+            });
+          }
+        }
+      } : {}));
+
       $video.play().catch(function(){});
       $overlay.style.display = "none";
     });
@@ -261,7 +282,7 @@ function setupHLSPlayer(url){
     });
   } else {
     $video.src = playUrl;
-    currentPlayer = new Plyr($video, { autoplay: true });
+    currentPlayer = new Plyr($video, defaultOptions);
     $video.play().catch(function(){});
     $overlay.style.display = "none";
   }
