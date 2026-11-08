@@ -50,10 +50,9 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pill[data-tab=live].active{color:var(--live);background:rgba(255,51,85,.15);border-color:var(--live)}
 .pill[data-tab=live].active .count{background:rgba(255,51,85,.25);color:var(--live)}
 
-/* Match Grid set back to 1 column */
+/* Match Grid 1 column */
 .grid{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:48px}
 
-/* Card Styling */
 .card{display:flex;flex-direction:column;gap:14px;padding:20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);text-align:left;font:inherit;color:inherit;transition:all .3s cubic-bezier(0.16, 1, 0.3, 1);position:relative;overflow:hidden;box-shadow:var(--shadow);width:100%}
 .card:before{content:"";position:absolute;top:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,transparent,var(--olive),transparent);opacity:0;transition:opacity .25s}
 .card:hover{border-color:rgba(0,0,0,.18);transform:translateY(-6px);box-shadow:var(--shadow-deep);background:var(--surface2)}
@@ -65,8 +64,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}.sport-chip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .card-main-click{background:none;border:0;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;display:block;padding:0}
-
-/* Team vs Team with clean and clear layout */
 .card-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 0}
 .team-column{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center}
 .team-row{display:flex;align-items:center;gap:4px;justify-content:center;max-width:100%}
@@ -89,20 +86,35 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
 
-.player-top{display:flex;align-items:center;gap:14px;padding:24px 0 16px;flex-wrap:wrap}.icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--white);display:grid;place-items:center;font-size:18px;box-shadow:var(--shadow);flex:none;cursor:pointer;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275)}.icon-btn:hover{border-color:var(--olive);color:var(--olive);background:var(--surface2);transform:translateY(-2px)}.player-meta{flex:1;min-width:0}.player-title{font:700 clamp(18px,3vw,24px)/1.15 var(--display);overflow-wrap:anywhere}.player-sub{color:var(--muted);font-size:13px;margin-top:3px;font-weight:500}
+/* Player View Custom Layout as requested */
+.player-top-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;gap:12px;flex-wrap:wrap}
+.player-brand-badge{display:flex;align-items:center;gap:10px}
+.player-brand-badge .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:15px;font-weight:700}
+.player-brand-badge h3{font:700 18px var(--display)}
+
 .screen{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:16/9;width:100%;max-width:min(980px,calc((100vh - 220px)*16/9));margin:0 auto;border:1px solid var(--border);box-shadow:0 25px 60px rgba(0,0,0,.25)}
 #player-container{position:absolute;inset:0;background:#000;overflow:hidden}
 #player-container video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
 .quality-toast{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.88);color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .quality-toast.show{opacity:1}
-.player-sub-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:14px auto 26px;flex-wrap:wrap;padding:0 2px}.player-brand-info{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}.player-brand-info span{color:var(--olive)}.player-actions-group{display:flex;align-items:center;gap:8px}
-.player-tg-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:700;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;box-shadow:0 6px 18px rgba(0,136,204,.35);transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275)}
-.player-tg-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}.player-tg-btn svg{width:14px;height:14px;fill:currentColor}
-.player-share-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:12.5px;font-weight:700;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--white);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
-.player-share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-deep)}
-.section-title{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);max-width:980px;margin:30px auto 12px}
 
-/* Channel / Stream list updated to 2-column grid */
+/* Team vs Team match header inside player view */
+.player-match-showcase{display:flex;align-items:center;justify-content:center;gap:24px;padding:20px 0;max-width:980px;margin:0 auto}
+.pm-team{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center}
+.pm-team .crest{width:56px;height:56px}
+.pm-name{font:700 15px var(--display);color:var(--ink);overflow-wrap:anywhere}
+.pm-vs{font:700 14px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+.player-sub-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:10px auto 20px;flex-wrap:wrap;padding:0 2px}
+.player-actions-group{display:flex;align-items:center;gap:8px;width:100%;justify-content:center}
+.player-tg-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;box-shadow:0 6px 18px rgba(0,136,204,.35);transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275)}
+.player-tg-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}.player-tg-btn svg{width:15px;height:15px;fill:currentColor}
+.player-share-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:700;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--white);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
+.player-share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-deep)}
+
+.section-title{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);max-width:980px;margin:24px auto 10px}
+
+/* Channel / Stream list set to 2 columns (2x2 grid) */
 .streams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:980px;margin:0 auto}
 .stream-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:14px 16px;border-radius:12px;text-align:left;border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);transition:all .22s cubic-bezier(0.175,0.885,0.32,1.275)}
 .stream-btn:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--shadow-deep)}.stream-btn.active{border-color:var(--olive);background:var(--surface2);box-shadow:0 0 0 2px var(--olive) inset, var(--shadow)}
@@ -144,7 +156,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .btn-joined-main:hover{opacity:1}
 
 @keyframes btnPop{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
-@media(max-width:600px){.container{padding:0 14px}.header{padding-top:14px;padding-bottom:14px}.header-actions{gap:6px}.clock{display:none}.card{padding:15px}.screen{max-width:100%;border-radius:10px}.player-sub-bar{align-items:flex-start}.player-brand-info{font-size:12px}.player-tg-btn,.player-share-btn{padding:8px 10px}.popup-box{padding:34px 22px 20px}.streams{grid-template-columns:1fr}}
+@media(max-width:600px){.container{padding:0 14px}.header{padding-top:14px;padding-bottom:14px}.header-actions{gap:6px}.card{padding:15px}.screen{max-width:100%;border-radius:10px}.streams{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -181,13 +193,44 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </section>
 
 <section id="playerView" class="view">
-<header class="player-top"><button class="icon-btn" id="backHub" aria-label="Back to matches">←</button><div class="player-meta"><h2 class="player-title" id="playerTitle">FootxCrate Player</h2><p class="player-sub" id="playerSub"></p></div></header>
-<div class="screen"><div id="player-container"><div class="screen-msg">Loading stream…</div></div></div>
-<div class="player-sub-bar"><div class="player-brand-info"><span>FootxCrate</span> — Live Stream Player</div><div class="player-actions-group">
-<a class="player-tg-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span>Join Telegram</span></a>
-<button class="player-share-btn" id="shareBtn" type="button"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg><span>Share</span></button>
-</div></div>
-<h3 class="section-title">Available Streams</h3><div class="streams" id="streams"></div>
+  <!-- 1. Sabse upar FootxCrate branding & Telegram / Back -->
+  <div class="player-top-header">
+    <button class="icon-btn" id="backHub" aria-label="Back to matches">←</button>
+    <div class="player-brand-badge">
+      <div class="brand-mark">FC</div>
+      <h3>FootxCrate</h3>
+    </div>
+    <a class="join-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener" style="padding:7px 12px;font-size:11.5px;">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+      <span>Telegram</span>
+    </a>
+  </div>
+
+  <!-- 2. Uske baad Video Player -->
+  <div class="screen"><div id="player-container"><div class="screen-msg">Loading stream…</div></div></div>
+
+  <!-- 3. Fir dono side dono team ke logo aur beech me team name clearly visible -->
+  <div class="player-match-showcase" id="playerMatchShowcase">
+    <div class="pm-team">
+      <div class="crest" id="pmCrestA">?</div>
+      <div class="pm-name" id="pmNameA">Team A</div>
+    </div>
+    <div class="pm-vs">vs</div>
+    <div class="pm-team">
+      <div class="crest" id="pmCrestB">?</div>
+      <div class="pm-name" id="pmNameB">Team B</div>
+    </div>
+  </div>
+
+  <div class="player-sub-bar">
+    <div class="player-actions-group">
+      <button class="player-share-btn" id="shareBtn" type="button"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg><span>Share Stream</span></button>
+    </div>
+  </div>
+
+  <!-- 4. Fir channel grid 2x2 format me -->
+  <h3 class="section-title">Available Streams</h3>
+  <div class="streams" id="streams"></div>
 </section>
 </div>
 
@@ -250,7 +293,7 @@ const dateString=d=>d.toLocaleDateString([],{day:"numeric",month:"short"});
 
 function crest(url,name){
  const initials=String(name||"").replace(/[^A-Za-z0-9 ]/g,"").split(/\s+/).filter(Boolean).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"?";
- if(!url||url==="null")return `<div class="crest">${esc(initials)}</div>`;
+ if(!url||url==="null")return `<div class="crest"><span>${esc(initials)}</span></div>`;
  return `<div class="crest"><span>${esc(initials)}</span><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></div>`;
 }
 
@@ -563,8 +606,8 @@ async function openPlayer(id, targetStreamId){
  if(!ev){
   state.currentEvent=null;
   state.currentStreams=[];
-  $("playerTitle").textContent="Match not found";
-  $("playerSub").textContent="";
+  $("pmNameA").textContent="Match not found";
+  $("pmNameB").textContent="";
   $("streams").innerHTML="";
   showPlayerError("This match is no longer available.");
   return;
@@ -573,6 +616,23 @@ async function openPlayer(id, targetStreamId){
  state.currentEvent=ev;
  state.currentStreams=ev.streams||[];
  
+ // Update Player Match Showcase Header
+ const teamA = ev.a || ev.title || "Team A";
+ const teamB = ev.b || "";
+ $("pmNameA").textContent = teamA;
+ $("pmNameB").textContent = teamB;
+ $("pmCrestA").outerHTML = crest(ev.fa, teamA).replace('class="crest"', 'id="pmCrestA" class="crest"');
+ if(!teamB) {
+  $("pmCrestB").style.display = "none";
+  $("pmNameB").style.display = "none";
+  document.querySelector(".pm-vs").style.display = "none";
+ } else {
+  $("pmCrestB").style.display = "grid";
+  $("pmNameB").style.display = "block";
+  document.querySelector(".pm-vs").style.display = "block";
+  $("pmCrestB").outerHTML = crest(ev.fb, teamB).replace('class="crest"', 'id="pmCrestB" class="crest"');
+ }
+
  let index = 0;
  if(targetStreamId) {
   if(/^\d+$/.test(targetStreamId)) {
@@ -583,9 +643,6 @@ async function openPlayer(id, targetStreamId){
   }
  }
  state.currentIndex = index;
- 
- $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"FootxCrate Player";
- $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
  
  const rec=state.currentStreams[index];
  renderPlayerStreams(rec ? rec.id : null);
