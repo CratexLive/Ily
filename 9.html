@@ -535,28 +535,50 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
-/* Hybrid Player Engine: Shaka for DASH/DRM, Hls.js + Plyr for M3U8 */
+/* Bufferless Hybrid Player with HLS Quality Switcher (Gear) */
 async function mountPlayer(record,token){
  const c=$("player-container");c.innerHTML="";
  const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
 
- if(isHls && (Hls.isSupported() || document.createElement('video').canPlayType('application/vnd.apple.mpegurl'))){
+ if(isHls && (Hls.isSupported() || document.createElement('video').canPlayTask)){
   const video=document.createElement("video");video.controls=true;video.playsInline=true;video.autoplay=true;c.appendChild(video);
+  
   if(Hls.isSupported()){
-   hlsInstance=new Hls();
+   hlsInstance=new Hls({
+    maxBufferLength: 30,
+    maxMaxBufferLength: 60,
+    liveSyncDurationCount: 3,
+    lowLatencyMode: true
+   });
    hlsInstance.loadSource(record.link);
    hlsInstance.attachMedia(video);
-   hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{if(token===playbackToken)video.play().catch(()=>{})});
-  }else{
-   video.src=record.link;
+   
+   hlsInstance.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+    if(token!==playbackToken) return;
+    const availableQualities = hlsInstance.levels.map((l, index) => index);
+    
+    plyrInstance = new Plyr(video, {
+     controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+     settings: ['quality', 'speed'],
+     quality: {
+      default: availableQualities[availableQualities.length - 1],
+      options: availableQualities,
+      forced: true,
+      onChange: (quality) => { hlsInstance.currentLevel = quality; }
+     }
+    });
+    video.play().catch(()=>{});
+   });
+  } else {
+   video.src = record.link;
+   plyrInstance = new Plyr(video, {controls:['play-large','play','progress','current-time','mute','volume','fullscreen']});
    video.addEventListener("loadedmetadata",()=>{if(token===playbackToken)video.play().catch(()=>{})},{once:true});
   }
-  plyrInstance=new Plyr(video,{controls:['play-large','play','progress','current-time','mute','volume','fullscreen']});
   return;
  }
 
- // Shaka Player for DASH / MPD streams
- if(!window.shaka)throw Error("Shaka Player library did not load.");
+ // Bufferless Shaka Player for DASH / MPD streams
+ if(!window.shaka)throw Error("Shaka library did not load.");
  shaka.polyfill.installAll();
  if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
  
@@ -567,8 +589,15 @@ async function mountPlayer(record,token){
  ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"]});
 
  instance.configure({
-  streaming:{bufferingGoal:5,rebufferingGoal:0.5,bufferBehind:10,lowLatencyMode:true,retryParameters:{maxAttempts:10,baseDelay:100,timeout:5000}},
-  abr:{enabled:true,defaultBandwidthEstimate:2000000}
+  streaming:{
+    bufferingGoal:3,
+    rebufferingGoal:0.3,
+    bufferBehind:5,
+    lowLatencyMode:true,
+    inaccurateManifestTolerance:0,
+    retryParameters:{maxAttempts:10,baseDelay:100,timeout:5000}
+  },
+  abr:{enabled:true,defaultBandwidthEstimate:2000000,switchInterval:1}
  });
 
  const ck=getClearKey(record);
