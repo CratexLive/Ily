@@ -1,106 +1,64 @@
 export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
-  const targetUrl = url.searchParams.get('u');
-
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(),
-    });
-  }
+  const targetUrl = url.searchParams.get('url');
 
   if (!targetUrl) {
-    return new Response(JSON.stringify({ error: 'Missing "u" query parameter' }), {
-      status: 400,
-      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-    });
+    return new Response("URL parameter is missing", { status: 400 });
   }
 
   try {
-    // Decode the target URL
-    const decodedUrl = decodeURIComponent(targetUrl);
+    const originHeaders = new Headers(request.headers);
+    originHeaders.delete('host');
+    originHeaders.delete('referer');
 
-    // Fetch from origin with appropriate headers
-    const originResponse = await fetch(decodedUrl, {
-      method: request.method,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Origin': 'https://www.fancode.com',
-        'Referer': 'https://www.fancode.com/',
-      },
-      redirect: 'follow',
+    const response = await fetch(targetUrl, {
+      headers: originHeaders,
+      redirect: 'follow'
     });
 
-    // Get response body
-    const contentType = originResponse.headers.get('Content-Type') || 'application/octet-stream';
-    let body = await originResponse.arrayBuffer();
+    const contentType = response.headers.get('content-type') || '';
 
-    // For HLS manifests (.m3u8), rewrite segment URLs to also go through proxy
-    if (decodedUrl.includes('.m3u8') || contentType.includes('mpegurl') || contentType.includes('m3u8')) {
-      const text = new TextDecoder().decode(body);
-      const baseUrl = decodedUrl.substring(0, decodedUrl.lastIndexOf('/') + 1);
-      const proxyBase = url.origin + url.pathname;
+    if (targetUrl.includes('.m3u8') || contentType.includes('mpegurl')) {
+      let text = await response.text();
+      const targetParsed = new URL(targetUrl);
+      const baseUrl = `${targetParsed.protocol}//${targetParsed.host}${targetParsed.pathname.substring(0, targetParsed.pathname.lastIndexOf('/') + 1)}`;
+      const proxyScriptUrl = `${url.origin}${url.pathname}`;
 
-      const rewritten = text.split('\n').map(line => {
-        const trimmed = line.trim();
-        // Skip empty lines and comments/tags
-        if (!trimmed || trimmed.startsWith('#')) {
-          // But rewrite URI= attributes inside tags (for key URLs, etc.)
-          if (trimmed.includes('URI="')) {
-            return trimmed.replace(/URI="([^"]+)"/g, (match, uri) => {
-              const absoluteUri = uri.startsWith('http') ? uri : baseUrl + uri;
-              return `URI="${proxyBase}?u=${encodeURIComponent(absoluteUri)}"`;
+      const lines = text.split('\n');
+      const rewrittenLines = lines.map(line => {
+        line = line.trim();
+        if (!line) return '';
+        if (line.startsWith('#')) {
+          if (line.includes('URI="')) {
+            return line.replace(/URI="([^"]+)"/, (match, uri) => {
+              const absoluteUri = new URL(uri, baseUrl).toString();
+              return `URI="${proxyScriptUrl}?url=${encodeURIComponent(absoluteUri)}"`;
             });
           }
           return line;
+        } else {
+          const absoluteUrl = new URL(line, baseUrl).toString();
+          return `${proxyScriptUrl}?url=${encodeURIComponent(absoluteUrl)}`;
         }
-        // Rewrite segment/playlist URLs
-        if (trimmed.startsWith('http')) {
-          return `${proxyBase}?u=${encodeURIComponent(trimmed)}`;
+      });
+
+      return new Response(rewrittenLines.join('\n'), {
+        status: 200,
+        headers: {
+          'Content-Type': contentType || 'application/vnd.apple.mpegurl',
+          'Access-Control-Allow-Origin': '*'
         }
-        // Relative URL — make absolute then proxy
-        const absoluteUrl = baseUrl + trimmed;
-        return `${proxyBase}?u=${encodeURIComponent(absoluteUrl)}`;
-      }).join('\n');
-
-      body = new TextEncoder().encode(rewritten);
+      });
+    } else {
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set('Access-Control-Allow-Origin', '*');
+      return new Response(response.body, {
+        status: response.status,
+        headers: newHeaders
+      });
     }
-
-    // Build response
-    const responseHeaders = {
-      ...corsHeaders(),
-      'Content-Type': contentType,
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-    };
-
-    // Preserve content length for segments
-    if (!decodedUrl.includes('.m3u8') && !contentType.includes('mpegurl')) {
-      responseHeaders['Content-Length'] = body.byteLength.toString();
-    }
-
-    return new Response(body, {
-      status: originResponse.status,
-      headers: responseHeaders,
-    });
-
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'Proxy fetch failed', details: err.message }), {
-      status: 502,
-      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-    });
+    return new Response("Failed to fetch stream: " + err.message, { status: 500 });
   }
-}
-
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
-    'Access-Control-Expose-Headers': '*',
-    'Access-Control-Max-Age': '86400',
-  };
 }
