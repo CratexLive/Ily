@@ -186,8 +186,6 @@ function parseM3U(text){
       var info = line.substring(8);
       var commaIdx = info.indexOf(",");
       var rawName = commaIdx >= 0 ? info.substring(commaIdx+1).trim() : "Unknown";
-      
-      // Automatically strip out @sayan10 or similar handles from the channel name
       var cleanName = rawName.replace(/@\w+/gi, "").trim();
 
       var attrs = commaIdx >= 0 ? info.substring(0,commaIdx) : info;
@@ -251,7 +249,22 @@ function setupHLSPlayer(url){
   };
 
   if(Hls.isSupported() && /\.m3u8(\?|$)/i.test(url)) {
-    var hls = new Hls({ autoStartLoad: true, enableWorker: true, lowLatencyMode: true });
+    // Highly optimized HLS settings for instant loading and zero lag
+    var hls = new Hls({
+      autoStartLoad: true,
+      enableWorker: true,
+      lowLatencyMode: true,
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 10,
+      maxLiveSyncPlaybackRate: 1.5,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      manifestLoadingTimeOut: 10000,
+      manifestLoadingMaxRetry: 4,
+      fragLoadingTimeOut: 15000,
+      fragLoadingMaxRetry: 4
+    });
+    
     currentHls = hls;
     hls.loadSource(playUrl);
     hls.attachMedia($video);
@@ -279,8 +292,14 @@ function setupHLSPlayer(url){
 
     hls.on(Hls.Events.ERROR, function(_, data) {
       if(data.fatal) {
-        if(data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-        else if(data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+        if(data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls.startLoad();
+        } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError();
+        } else {
+          hls.destroy();
+          setupHLSPlayer(url);
+        }
       }
     });
   } else {
