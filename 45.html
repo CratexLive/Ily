@@ -284,11 +284,11 @@ function parseEventsFromData(data){
     if(!s)return;
     const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
-    const isDash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
+    const dash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
     streams.push({
      title:String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim(),
      link,
-     type:isDash?"android":"ios",
+     type:dash?"android":"ios",
      key:String(s.key||s.api||"").trim(),
      kid:String(s.kid||"").trim()
     });
@@ -471,11 +471,6 @@ async function mountNativeHls(record,token){
 }
 
 async function mountPlayer(record,token){
- const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
- if(isHls && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  await mountNativeHls(record, token);
-  return;
- }
  try{
   await mountShaka(record,token);
  }catch(err){
