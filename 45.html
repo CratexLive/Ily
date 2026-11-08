@@ -284,11 +284,11 @@ function parseEventsFromData(data){
     if(!s)return;
     const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
-    const dash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
+    const isDash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
     streams.push({
      title:String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim(),
      link,
-     type:dash?"android":"ios",
+     type:isDash?"android":"ios",
      key:String(s.key||s.api||"").trim(),
      kid:String(s.kid||"").trim()
     });
@@ -437,11 +437,11 @@ async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
 async function mountShaka(record,token){
- if(!window.shaka)throw Error("Shaka library did not load.");
- shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
+ if(!window.shaka)throw Error("Shaka Player library did not load.");
+ shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
  const c=$("player-container");c.innerHTML="";
  const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Cancelled.");
+ const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
  const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
  ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"],seekBarColors:{base:"#777",buffered:"#D48806",played:"#0088cc",ad:"#fff"}});
 
@@ -451,38 +451,38 @@ async function mountShaka(record,token){
     rebufferingGoal:1,
     bufferBehind:15,
     lowLatencyMode:true,
-    retryParameters:{maxAttempts:4,baseDelay:300,fuzzFactor:.5,timeout:8000}
+    inaccurateManifestTolerance:0,
+    retryParameters:{maxAttempts:6,baseDelay:300,fuzzFactor:.5,timeout:10000}
   },
-  abr:{enabled:true,defaultBandwidthEstimate:3500000}
+  abr:{enabled:true,defaultBandwidthEstimate:3500000,switchInterval:1,bandwidthUpgradeTarget:0.8,bandwidthDowngradeTarget:0.9}
  });
 
  const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
- await instance.load(record.link);
- if(token!==playbackToken)return;
- try{await video.play()}catch(e){showToast("Tap Play to start stream","",3000)}
+ instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",5000)});
+ await instance.load(record.link);if(token!==playbackToken)return;
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",5000)}
 }
 
 async function mountNativeHls(record,token){
- const c=$("player-container");c.innerHTML="";
- const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
- video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>{})},{once:true});
- video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("Stream playback failed.","Link might be offline.")},{once:true});
+ const c=$("player-container");c.innerHTML="";const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
+ video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:true});
+ video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("This HLS stream could not be played on this device.","The stream may be unavailable or blocked by the source server.")},{once:true});
  video.load();
 }
 
 async function mountPlayer(record,token){
  const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
- if(isHls) {
+ if(isHls && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
   await mountNativeHls(record, token);
- } else {
-  try {
-   await mountShaka(record, token);
-  } catch(err) {
-   if(token!==playbackToken)return;
-   await destroyPlayer();
-   if(token!==playbackToken)return;
-   await mountNativeHls(record, token);
-  }
+  return;
+ }
+ try{
+  await mountShaka(record,token);
+ }catch(err){
+  if(token!==playbackToken)return;
+  console.warn("Shaka playback failed, falling back:",err);
+  await destroyPlayer();if(token!==playbackToken)return;
+  await mountNativeHls(record,token);
  }
 }
 
@@ -490,14 +490,14 @@ async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){showPlayerError("Unable to play stream.",e.message||"Format not supported.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
 function renderPlayerStreams(active){
  const box=$("streams");
  const countText=$("channelCountText");
  if(!state.currentStreams.length){
-  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams found.</p></div>';
+  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';
   if(countText) countText.textContent = "0 channels";
   return;
  }
@@ -543,7 +543,6 @@ async function openPlayer(id,index){
  if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
  
- // Render exact screenshot matching match banner below player
  const s=getStatus(ev),now=Date.now(),statusText=s==="live"?"Live":s==="soon"?`in ${duration(ev.st-now)}`:"Finished";
  const statusClass=s;
  const sideALogo=crest(ev.fa,ev.a||ev.title);
@@ -635,7 +634,7 @@ window.addEventListener("hashchange",route);
 loadData();
 
 setInterval(()=>{
- if(window.__bootbed&&!location.hash.includes("watch")&&!document.hidden){loadData()}
+ if(window.__booted&&!location.hash.includes("watch")&&!document.hidden){loadData()}
 },120000);
 
 window.addEventListener("pagehide",()=>{stopPlayback()});
