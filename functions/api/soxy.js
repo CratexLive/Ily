@@ -19,7 +19,6 @@ export default {
       
       const contentType = response.headers.get('content-type') || '';
 
-      // If it's an m3u8 playlist, rewrite internal chunk/variant URLs
       if (contentType.includes('mpegurl') || contentType.includes('vnd.apple.mpegurl') || targetUrl.includes('.m3u8')) {
         let manifestText = await response.text();
         const baseUrl = `${target.origin}${target.pathname.substring(0, target.pathname.lastIndexOf('/') + 1)}`;
@@ -50,19 +49,29 @@ export default {
         });
 
         const modifiedManifest = rewrittenLines.join('\n');
-        const newResponse = new Response(modifiedManifest, response);
-        newResponse.headers.set('Access-Control-Allow-Origin', '*');
-        newResponse.headers.set('Content-Type', 'application/vnd.apple.mpegurl');
-        return newResponse;
+        
+        const newHeaders = new Headers(response.headers);
+        newHeaders.set('Access-Control-Allow-Origin', '*');
+        newHeaders.set('Content-Type', 'application/vnd.apple.mpegurl');
+
+        return new Response(modifiedManifest, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders
+        });
       }
 
-      // For video segments (.ts, .m4s), stream response back with CORS
-      const newResponse = new Response(response.body, response);
-      newResponse.headers.set('Access-Control-Allow-Origin', '*');
-      return newResponse;
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set('Access-Control-Allow-Origin', '*');
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
 
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
   }
 };
