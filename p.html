@@ -207,6 +207,7 @@ const DATA_URLS = [
   "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json",
   "https://sportlink-fancode10.pages.dev/fan.json"
 ];
+const PROXY_URL = "https://ily-7hy.pages.dev/api/soxy?u=";
 const TG_LINK="https://t.me/+PdIwyw8BQiQ4YmRl";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
@@ -294,7 +295,7 @@ function normalizeTeamName(name){
 function parseEventsFromData(data){
  if(!data)return[];
  
- // FanCode JSON parser
+ // FanCode JSON parser (Wrapped automatically with CORS Proxy)
  if(data.matches && Array.isArray(data.matches)){
   const events=[];
   data.matches.forEach(m=>{
@@ -304,7 +305,7 @@ function parseEventsFromData(data){
     const streams=[];
 
     if(m.streams && m.streams.primary){
-     streams.push({title: "FanCode - Primary", link: m.streams.primary.trim(), type: "ios", key: "", kid: ""});
+     streams.push({title: "FanCode - Primary", link: PROXY_URL + encodeURIComponent(m.streams.primary.trim()), type: "ios", key: "", kid: ""});
     }
 
     if(m.auto_streams){
@@ -312,7 +313,7 @@ function parseEventsFromData(data){
       if(langData && langData.streams){
        Object.entries(langData.streams).forEach(([res, link])=>{
         if(link && typeof link==='string'){
-         streams.push({title: `FanCode - ${lang} ${res.toUpperCase()}`, link: link.trim(), type: "ios", key: "", kid: ""});
+         streams.push({title: `FanCode - ${lang} ${res.toUpperCase()}`, link: PROXY_URL + encodeURIComponent(link.trim()), type: "ios", key: "", kid: ""});
         }
        });
       }
