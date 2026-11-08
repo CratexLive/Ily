@@ -177,7 +177,7 @@ video.mode-cover{object-fit:cover}
 </div>
 
 <div id="pc">
-  <video id="v" playsinline="" webkit-playsinline="" preload="none" x5-video-player-type="h5" x5-video-player-fullscreen="true">
+  <video id="v" playsinline="" webkit-playsinline="" preload="auto" x5-video-player-type="h5" x5-video-player-fullscreen="true">
   </video>
 </div>
 
@@ -234,25 +234,6 @@ var $grid    = document.getElementById("ch-grid");
 var $pc      = document.getElementById("pc");
 var $vid     = document.getElementById("v");
 var _stTmr   = null;
-
-function getTier(){
-  var mem   = navigator.deviceMemory || 4;
-  var cores = navigator.hardwareConcurrency || 4;
-  var mob   = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  var conn  = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  var net   = conn ? (conn.effectiveType || "4g") : "4g";
-  if(!mob) return "high";
-  if(mem <= 1.5 || cores <= 2 || net === "slow-2g" || net === "2g") return "low";
-  if(mem <= 3   || cores <= 4) return "mid";
-  return "high";
-}
-
-var TIER = getTier();
-var PROF = {
-  low:  {buf:4,  reBuf:1.5, behind:10, maxH:480,  maxBw:1000000, bwEst:400000 },
-  mid:  {buf:7,  reBuf:1.5, behind:20, maxH:720,  maxBw:3000000, bwEst:1000000},
-  high: {buf:10, reBuf:1.5, behind:25, maxH:1080, maxBw:0,       bwEst:2000000}
-}[TIER];
 
 var FITS       = ["contain","fill","cover"];
 var FIT_LABELS = {contain:"Fit", fill:"Fill", cover:"Zoom"};
@@ -323,17 +304,6 @@ function buildClearKeys(ch){
   if(single) out[single.kid] = single.key;
 
   return out;
-}
-
-function keyModeOf(ch){
-  var hasSportlink = Array.isArray(ch.sportlink) && ch.sportlink.length > 0;
-  var hasSonuxs    = Array.isArray(ch.sonuxs) && ch.sonuxs.length > 0;
-  var hasMulti     = hasSportlink || hasSonuxs;
-  var hasSingle    = isNonEmpty(ch.key_id) && isNonEmpty(ch.key);
-  if(hasMulti && hasSingle) return "mixed";
-  if(hasMulti)              return "multi";
-  if(hasSingle)             return "single";
-  return "none";
 }
 
 async function loadData(){
@@ -544,67 +514,44 @@ async function startPlayer(ch){
   var raw    = rawCookie(cookie);
   var url    = ch.stream_url;
   var drmKeys = buildClearKeys(ch);
-  var keyMode = keyModeOf(ch);
-
-  var restrictionsRelaxed = false;
-  var thermalApplied      = false;
-  var sessionStart        = Date.now();
 
   if(Object.keys(drmKeys).length === 0){
     toast("No DRM Keys Available","err",0);
     return;
   }
 
-  var thermalTimer = setInterval(function(){
-    if(Date.now() - sessionStart < 60*60*1000) return;
-    clearInterval(thermalTimer);
-    if(thermalApplied) return;
-    thermalApplied = true;
-    try{
-      player.configure("streaming.bufferBehind", 8);
-      if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
-        player.configure("abr.restrictions.maxHeight", Math.min(PROF.maxH, 720));
-      }
-    }catch(_){}
-  }, 60000);
-
-  function buildCfg(){
-    var effMaxH = (thermalApplied && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
-      ? Math.min(PROF.maxH, 720) : PROF.maxH;
-    var restr = {};
-    if(!restrictionsRelaxed){
-      if(effMaxH < 1080) restr.maxHeight    = effMaxH;
-      if(PROF.maxBw > 0) restr.maxBandwidth = PROF.maxBw;
+  /* 🔥 ULTRA BUFFER-FREE CONFIG 🔥 */
+  player.configure({
+    drm:{ clearKeys: drmKeys },
+    manifest:{
+      defaultPresentationDelay: 2,
+      ignoreTextStreamFailures: true,
+      dash: {
+        autoCorrectDrift: true
+      },
+      retryParameters:{maxAttempts:10,baseDelay:200,backoffFactor:1.5,fuzzFactor:.5,timeout:15000}
+    },
+    streaming:{
+      lowLatencyMode: true,
+      bufferingGoal: 15,
+      rebufferingGoal: 2,
+      bufferBehind: 10,
+      safeSeekOffset: 2,
+      stallEnabled: true,
+      stallThreshold: 0.3,
+      stallSkip: 0.1,
+      inaccurateManifestTolerance: 0.5,
+      liveSync: true,
+      liveSyncMaxLatency: 4,
+      liveSyncPlaybackRate: 1.05,
+      retryParameters:{maxAttempts:10,baseDelay:200,backoffFactor:1.5,fuzzFactor:.5,timeout:15000}
+    },
+    abr:{
+      enabled: true,
+      defaultBandwidthEstimate: 5000000,
+      switchInterval: 2
     }
-    return {
-      drm:{ clearKeys: drmKeys },
-      manifest:{
-        defaultPresentationDelay:4,
-        ignoreTextStreamFailures:true,
-        retryParameters:{maxAttempts:5,baseDelay:500,backoffFactor:2,fuzzFactor:.5,timeout:30000}
-      },
-      streaming:{
-        lowLatencyMode:false,
-        bufferingGoal:PROF.buf,
-        rebufferingGoal:PROF.reBuf,
-        bufferBehind:PROF.behind,
-        safeSeekOffset:4,
-        stallEnabled:true,
-        stallThreshold:1,
-        stallSkip:.3,
-        inaccurateManifestTolerance:0,
-        retryParameters:{maxAttempts:5,baseDelay:500,backoffFactor:2,fuzzFactor:.5,timeout:30000}
-      },
-      abr:{
-        enabled:true,
-        defaultBandwidthEstimate:PROF.bwEst,
-        switchInterval:4,
-        restrictions:restr
-      }
-    };
-  }
-
-  player.configure(buildCfg());
+  });
 
   var T = shaka.net.NetworkingEngine.RequestType;
   player.getNetworkingEngine().registerRequestFilter(function(type, req){
@@ -617,7 +564,6 @@ async function startPlayer(ch){
 
   var refreshing = false;
   var retries    = 0;
-  var edgeTried  = false;
   var lastTry    = 0;
   var started    = false;
   var stallTmr   = null;
@@ -627,21 +573,12 @@ async function startPlayer(ch){
   $pc.addEventListener("click",       unmuteOnce, {capture:true,once:true});
   $pc.addEventListener("keydown",     unmuteOnce, {capture:true,once:true});
 
-  function goLiveEdge(){
-    if(refreshing) return;
-    try{
-      player.goToLive();
-      edgeTried = true;
-      toast("Syncing To Live Edge…","warn",2000);
-    }catch(_){ reload(); }
-  }
-
   async function reload(){
     var now = Date.now();
-    if(refreshing || now - lastTry < 1500) return;
-    if(retries >= 5){ toast("Stream Unavailable. Please Try Again Later.","err",0); return; }
+    if(refreshing || now - lastTry < 1000) return;
+    if(retries >= 8){ toast("Stream Unavailable. Please Try Again Later.","err",0); return; }
     refreshing = true; lastTry = now; retries++;
-    toast("Reconnecting… (" + retries + " / 5)","warn",0);
+    toast("Reconnecting… (" + retries + " / 8)","warn",0);
     try{
       var d     = await loadData();
       var fresh = (d.channels || []).find(function(c){ return c.id === ch.id; });
@@ -651,39 +588,23 @@ async function startPlayer(ch){
       cookie  = fresh.cookie;
       raw     = rawCookie(cookie);
       drmKeys = freshKeys;
-      keyMode = keyModeOf(fresh);
       url     = fresh.stream_url;
-      player.configure(buildCfg());
       await player.load(url);
       $vid.play().catch(function(){});
-      retries = 0; edgeTried = false;
-      toast("Live","live",4000);
+      retries = 0;
+      toast("Live","live",3000);
     }catch(_){
-      setTimeout(reload, Math.min(1000 * Math.pow(2, retries - 1), 8000));
+      setTimeout(reload, 1000);
     }finally{ refreshing = false; }
   }
-
-  var RECOVERABLE = [1001,1002,1003,4012,6006,6007,7000,7001,7002];
 
   player.addEventListener("error", function(ev){
     var err  = ev.detail;
     var code = err && err.code;
-    if(code === 4014 && !restrictionsRelaxed){
-      restrictionsRelaxed = true;
-      refreshing = true;
-      player.configure(buildCfg());
-      toast("Adjusting Quality…","warn",2000);
-      player.load(url)
-        .then(function(){ $vid.play().catch(function(){}); toast("Live","live",4000); })
-        .catch(function(){ reload(); })
-        .finally(function(){ refreshing = false; });
-      return;
-    }
-    if(RECOVERABLE.indexOf(code) !== -1){
-      toast("Buffering…","warn",0);
-      setTimeout(function(){ if(!refreshing) reload(); }, 700);
+    if([1001,1002,1003,4012,6006,6007,7000,7001,7002].indexOf(code) !== -1){
+      setTimeout(function(){ if(!refreshing) reload(); }, 300);
     } else {
-      toast(shakaErrStr(err),"err",6000);
+      toast(shakaErrStr(err),"err",5000);
     }
   });
 
@@ -692,29 +613,27 @@ async function startPlayer(ch){
     toast("Loading Stream…","warn",0);
     await player.load(url);
     hideOverlay();
-    toast("Ready — Tap ▶ To Play","ok",5000);
+    toast("Ready — Tap ▶ To Play","ok",4000);
   }catch(_){
     hideOverlay();
-    toast("Connection Error — Retrying…","warn",0);
-    setTimeout(reload, 1500);
+    setTimeout(reload, 1000);
     return;
   }
 
   function onStall(){
     if(stallTmr) return;
-    toast("Buffering…","warn",0);
     if(!started || refreshing) return;
+    try { player.goToLive(); } catch(_) {}
     stallTmr = setTimeout(function(){
       stallTmr = null;
-      if(!edgeTried) goLiveEdge(); else reload();
-    }, 5000);
+      if(!refreshing) reload();
+    }, 2500);
   }
 
   function onPlaying(){
     started = true;
     if(stallTmr){ clearTimeout(stallTmr); stallTmr = null; }
-    edgeTried = false;
-    if(!refreshing) toast("Live","live",3000);
+    if(!refreshing) toast("Live","live",2000);
   }
 
   $vid.addEventListener("waiting", onStall);
@@ -722,29 +641,20 @@ async function startPlayer(ch){
   $vid.addEventListener("playing", onPlaying);
   $vid.addEventListener("error",   function(){
     if(!refreshing){
-      toast("Buffering…","warn",0);
-      setTimeout(function(){ if(!refreshing) reload(); }, 700);
+      setTimeout(function(){ if(!refreshing) reload(); }, 300);
     }
   });
 
   document.addEventListener("visibilitychange", function(){
     if(!document.hidden){
       setTimeout(function(){
-        if(started && $vid.paused && !refreshing) $vid.play().catch(function(){});
-      }, 400);
+        if(started && $vid.paused && !refreshing){
+          try { player.goToLive(); } catch(_) {}
+          $vid.play().catch(function(){});
+        }
+      }, 200);
     }
   });
-
-  var netConn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if(netConn){
-    netConn.addEventListener("change", function(){
-      if(!player || restrictionsRelaxed) return;
-      var t = netConn.effectiveType || "4g";
-      var h = t === "slow-2g" || t === "2g" ? 240 : t === "3g" ? 480 : PROF.maxH;
-      try{ player.configure("abr.restrictions.maxHeight", h); }catch(_){}
-      if(h < PROF.maxH) toast("Slow Network — Reducing Quality","warn",3000);
-    });
-  }
 }
 
 async function main(){
