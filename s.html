@@ -679,8 +679,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 $("list").addEventListener("click",e=>{
  const teamFavBtn=e.target.closest("[data-team-fav]");
--if(teamFavBtn){
-+if(teamFavBtn){
+ if(teamFavBtn){
   const team=teamFavBtn.dataset.teamFav;
   const idx=state.favsTeams.indexOf(team);
   if(idx>-1) state.favsTeams.splice(idx,1);
