@@ -24,8 +24,8 @@ export async function onRequest(context) {
     const response = await fetch(modifiedRequest);
     const contentType = response.headers.get("content-type") || "";
 
-    // Agar response m3u8 playlist hai, toh uske andar ke URLs ko proxy ke through route karne ke liye rewrite karein
-    if (contentType.includes("mpegurl") || contentType.includes("vnd.apple.mpegurl") || targetUrl.endsWith(".m3u8")) {
+    // Intercept and rewrite HLS playlists (.m3u8)
+    if (contentType.includes("mpegurl") || contentType.includes("vnd.apple.mpegurl") || targetUrl.includes(".m3u8")) {
       let m3u8Text = await response.text();
       const targetObj = new URL(targetUrl);
       const baseUrl = targetObj.origin + targetObj.pathname.substring(0, targetObj.pathname.lastIndexOf('/') + 1);
@@ -33,10 +33,24 @@ export async function onRequest(context) {
 
       const lines = m3u8Text.split('\n');
       const rewrittenLines = lines.map(line => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) {
+        let trimmed = line.trim();
+        if (!trimmed) return line;
+
+        // Handle tags containing URI attributes (like #EXT-X-KEY encryption keys, #EXT-X-MAP, etc.)
+        if (trimmed.startsWith('#')) {
+          if (trimmed.includes('URI="')) {
+            return line.replace(/URI="([^"]+)"/, (match, uri) => {
+              let absoluteUri = uri;
+              if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
+                absoluteUri = new URL(uri, baseUrl).toString();
+              }
+              return `URI="${proxyDomain}?u=${encodeURIComponent(absoluteUri)}"`;
+            });
+          }
           return line;
         }
+
+        // Handle regular segment lines or variant stream playlist links
         let absoluteSegmentUrl = trimmed;
         if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
           absoluteSegmentUrl = new URL(trimmed, baseUrl).toString();
@@ -58,7 +72,7 @@ export async function onRequest(context) {
       return newResponse;
     }
 
-    // Normal video chunks (.ts / .mp4) ke liye direct stream forward karein
+    // Pass through actual video chunks (.ts, .m4s, .mp4) smoothly
     const newResponse = new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
