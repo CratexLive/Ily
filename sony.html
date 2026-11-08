@@ -185,9 +185,12 @@ function parseM3U(text){
     if(line.indexOf("#EXTINF:") === 0){
       var info = line.substring(8);
       var commaIdx = info.indexOf(",");
-      var name = commaIdx >= 0 ? info.substring(commaIdx+1).trim() : "Unknown";
-      var attrs = commaIdx >= 0 ? info.substring(0,commaIdx) : info;
+      var rawName = commaIdx >= 0 ? info.substring(commaIdx+1).trim() : "Unknown";
+      
+      // Automatically strip out @sayan10 or similar handles from the channel name
+      var cleanName = rawName.replace(/@\w+/gi, "").trim();
 
+      var attrs = commaIdx >= 0 ? info.substring(0,commaIdx) : info;
       var id = "";
       var logo = "";
       var idMatch = attrs.match(/tvg-id="([^"]*)"/i);
@@ -195,8 +198,8 @@ function parseM3U(text){
       var logoMatch = attrs.match(/tvg-logo="([^"]*)"/i) || attrs.match(/logo="([^"]*)"/i);
       if(logoMatch) logo = logoMatch[1];
 
-      var safeId = id || (name.replace(/[^a-z0-9]+/gi,"_").toLowerCase() + "_" + channels.length);
-      current = { id: safeId, name: name, logo: logo, stream_url: "" };
+      var safeId = id || (cleanName.replace(/[^a-z0-9]+/gi,"_").toLowerCase() + "_" + channels.length);
+      current = { id: safeId, name: cleanName, logo: logo, stream_url: "" };
     } else if(line.charAt(0) !== "#" && current){
       current.stream_url = line;
       channels.push(current);
