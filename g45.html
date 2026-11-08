@@ -268,7 +268,8 @@ async function fetchJson(url){
 
 function parseEventsFromData(data){
  if(!data)return[];
- // Check if data is from Willow JSON format (`Matches` array)
+ 
+ // Intelligent parser for Willow JSON format
  if(data.Matches && Array.isArray(data.Matches)){
   const events=[];
   data.Matches.forEach(m=>{
@@ -276,6 +277,8 @@ function parseEventsFromData(data){
     const st=parseDate(m.time);
     const en=new Date(st ? st.getTime()+3*3600000 : Date.now()+3*3600000);
     const streams=[];
+    
+    // Add stream_url_alpha servers
     if(m.stream_url_alpha && typeof m.stream_url_alpha==='object'){
      Object.entries(m.stream_url_alpha).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
@@ -289,14 +292,41 @@ function parseEventsFromData(data){
       }
      });
     }
-    const parts = m.title.split("-").map(x=>x.trim());
-    const teamA = parts[parts.length-2] || m.title;
-    const teamB = parts[parts.length-1] || "";
+    
+    // Add stream_url_bravo servers if present
+    if(m.stream_url_bravo && typeof m.stream_url_bravo==='object'){
+     Object.entries(m.stream_url_bravo).forEach(([srvName, link])=>{
+      if(link && typeof link==='string'){
+       streams.push({
+        title: `Willow Bravo - ${srvName}`,
+        link: link.trim(),
+        type: "android",
+        key: m.drm_key || "",
+        kid: ""
+       });
+      }
+     });
+    }
+
+    // Intelligently extract Team A vs Team B from title regardless of extra match numbering
+    let cleanTitle = m.title || "";
+    let teamA = "", teamB = "";
+    if(cleanTitle.includes(" vs ")) {
+     const vsSplit = cleanTitle.split(" vs ");
+     const leftPart = vsSplit[0].trim();
+     const rightPart = vsSplit[1].trim();
+     
+     // Extract last token or segment for Team A
+     const leftTokens = leftPart.split(" - ");
+     teamA = leftTokens[leftTokens.length - 1].trim();
+     teamB = rightPart.split(" - ")[0].trim();
+    }
+
     events.push({
-     id: String(m.match_id||m.title.toLowerCase().replace(/[^a-z0-9]/g,"")),
-     title: m.title,
+     id: String(m.match_id||cleanTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
+     title: cleanTitle,
      sport: "Cricket",
-     comp: parts[0] || "Willow Event",
+     comp: cleanTitle.split(" - ")[0] || "Willow Event",
      a: teamA,
      b: teamB,
      fa: m.cover_image || "",
@@ -367,11 +397,13 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
+  // Intelligent Merging by normalized team names and time proximity
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const cleanA = ev.a ? ev.a.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
    const cleanB = ev.b ? ev.b.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
-   const timeWindow = Math.floor(ev.st.getTime() / (1000 * 60 * 30));
+   const timeWindow = Math.floor(ev.st.getTime() / (1000 * 60 * 60)); // 1-hour block window to tightly bind identical matches
+   
    const key = (cleanA && cleanB) ? `${cleanA}_${cleanB}_${timeWindow}` : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
 
    if(mergedMap.has(key)){
