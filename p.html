@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Acme&family=Amaranth:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/controls.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
 <style>
 :root{--cream:#F8EFD4;--olive:#5F684C;--white:#FFFFFF;--ink:#141414;--muted:#595959;--accent:#0088cc;--border:rgba(0,0,0,.12);--surface2:#F0E4C3;--surface3:#E4D7B2;--live:#FF3355;--soon:#D48806;--done:#5C6B80;--radius:16px;--shadow:0 12px 35px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);--shadow-deep:0 20px 50px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);--display:'Space Grotesk','Inter',sans-serif;--body:'Inter',system-ui,sans-serif}
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.08);--surface2:#202327;--surface3:#25292E;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
@@ -199,20 +200,17 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/shaka-player.ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
 "use strict";
 const DATA_URLS = [
   "https://sonujson-v6.pages.dev/Data/events/allinone.json",
   "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json",
-  "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json",
-  "https://sportlink-fancode10.pages.dev/fan.json"
+  "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json"
 ];
-const PROXY_URL = "https://ily-7hy.pages.dev/api/soxy?u=";
 const TG_LINK="https://t.me/+PdIwyw8BQiQ4YmRl";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
-let player=null,overlay=null,playbackToken=0,toastTimer=null,hlsInstance=null;
+let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -296,67 +294,6 @@ function normalizeTeamName(name){
 function parseEventsFromData(data){
  if(!data)return[];
  
- // FanCode JSON parser (Wrapped automatically with CORS Proxy)
- if(data.matches && Array.isArray(data.matches)){
-  const events=[];
-  data.matches.forEach(m=>{
-   try{
-    const st=parseDate(m.startTime) || new Date();
-    const en=new Date(st.getTime()+3*3600000);
-    const streams=[];
-
-    if(m.streams && m.streams.primary){
-     let rawLink = m.streams.primary.trim();
-     let wrappedLink = rawLink.includes("fancode") || rawLink.includes("dai-fancode") || rawLink.includes("in-mc-plive") ? PROXY_URL + encodeURIComponent(rawLink) : rawLink;
-     streams.push({title: "FanCode - Primary", link: wrappedLink, type: "ios", key: "", kid: ""});
-    }
-
-    if(m.auto_streams){
-     Object.entries(m.auto_streams).forEach(([lang, langData])=>{
-      if(langData && langData.streams){
-       Object.entries(langData.streams).forEach(([res, link])=>{
-        if(link && typeof link==='string'){
-         let rawLink = link.trim();
-         let wrappedLink = rawLink.includes("fancode") || rawLink.includes("dai-fancode") || rawLink.includes("in-mc-plive") ? PROXY_URL + encodeURIComponent(rawLink) : rawLink;
-         streams.push({title: `FanCode - ${lang} ${res.toUpperCase()}`, link: wrappedLink, type: "ios", key: "", kid: ""});
-        }
-       });
-      }
-     });
-    }
-
-    let cleanTitle = m.title || "";
-    let teamA = "", teamB = "";
-    if(cleanTitle.includes(" Vs ")) {
-     const vsSplit = cleanTitle.split(" Vs ");
-     teamA = vsSplit[0].trim();
-     teamB = vsSplit[1].trim();
-    } else if(cleanTitle.includes(" vs ")) {
-     const vsSplit = cleanTitle.split(" vs ");
-     teamA = vsSplit[0].trim();
-     teamB = vsSplit[1].trim();
-    }
-
-    events.push({
-     id: String(m.match_id||cleanTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
-     title: cleanTitle,
-     sport: m.category || "Cricket",
-     comp: m.tournament || "FanCode Event",
-     a: teamA,
-     b: teamB,
-     fa: m.image || "",
-     fb: m.image || "",
-     status: m.status || "LIVE",
-     st: st,
-     en: en,
-     streams
-    });
-   }catch(e){}
-  });
-  return events;
- }
-
- // Willow JSON parser
  if(data.Matches && Array.isArray(data.Matches)){
   const events=[];
   data.Matches.forEach(m=>{
@@ -368,7 +305,13 @@ function parseEventsFromData(data){
     if(m.stream_url_alpha && typeof m.stream_url_alpha==='object'){
      Object.entries(m.stream_url_alpha).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
-       streams.push({title: `Willow - ${srvName}`, link: link.trim(), type: "android", key: m.drm_key || "", kid: ""});
+       streams.push({
+        title: `Willow - ${srvName}`,
+        link: link.trim(),
+        type: "android",
+        key: m.drm_key || "",
+        kid: ""
+       });
       }
      });
     }
@@ -376,7 +319,13 @@ function parseEventsFromData(data){
     if(m.stream_url_bravo && typeof m.stream_url_bravo==='object'){
      Object.entries(m.stream_url_bravo).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
-       streams.push({title: `Willow Bravo - ${srvName}`, link: link.trim(), type: "android", key: m.drm_key || "", kid: ""});
+       streams.push({
+        title: `Willow Bravo - ${srvName}`,
+        link: link.trim(),
+        type: "android",
+        key: m.drm_key || "",
+        kid: ""
+       });
       }
      });
     }
@@ -427,11 +376,8 @@ function parseEventsFromData(data){
    const rawStreams=Array.isArray(item.streams)?item.streams:[];
    rawStreams.forEach((s,i)=>{
     if(!s)return;
-    let link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
+    const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
-    if (link.includes("fancode") || link.includes("dai-fancode") || link.includes("in-mc-plive")) {
-      link = PROXY_URL + encodeURIComponent(link);
-    }
     const dash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
     streams.push({
      title:String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim(),
@@ -578,7 +524,6 @@ function getClearKey(record){
 }
 
 async function destroyPlayer(){
- if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(overlay){try{overlay.destroy()}catch(e){}overlay=null}
  if(player){try{await player.destroy()}catch(e){}player=null}
  const c=$("player-container");if(c)c.innerHTML="";
@@ -587,70 +532,56 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
-/* Hybrid Player Engine: Native/Hls.js for FanCode & M3U8, Shaka for DASH (.mpd) */
-async function mountPlayer(record,token){
- const c=$("player-container");c.innerHTML="";
- const link=record.link;
- const isHls = link.includes("fancode") || link.includes("soxy") || /\.m3u8(?:\?|$)/i.test(link);
-
- const video=document.createElement("video");
- video.playsInline=true;
- video.setAttribute("playsinline","");
- video.setAttribute("webkit-playsinline","");
- video.autoplay=true;
- video.controls=true;
- c.appendChild(video);
-
- if(isHls){
-  if (video.canPlayType('application/vnd.apple.mpegurl')) {
-   video.src = link;
-   video.addEventListener("loadedmetadata",()=>{if(token===playbackToken)video.play().catch(()=>{})},{once:true});
-  } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-   hlsInstance = new Hls({maxBufferLength: 30, maxMaxBufferLength: 60, lowLatencyMode: true});
-   hlsInstance.loadSource(link);
-   hlsInstance.attachMedia(video);
-   hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{if(token===playbackToken)video.play().catch(()=>{})});
-  } else {
-   video.src = link;
-   video.play().catch(()=>{});
-  }
-  return;
- }
-
- // Shaka Player for DASH (.mpd) streams
+/* Bufferless, Low-Latency Optimized Shaka Engine for ALL Streams & Devices */
+async function mountShaka(record,token){
  if(!window.shaka)throw Error("Shaka Player library did not load.");
- shaka.polyfill.installAll();
- if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
- 
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Cancelled.");
+ shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
+ const c=$("player-container");c.innerHTML="";
+ const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
+ const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
  const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
- ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","fullscreen","overflow_menu"]});
+ ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"],seekBarColors:{base:"#777",buffered:"#D48806",played:"#0088cc",ad:"#fff"}});
 
  instance.configure({
-  streaming:{bufferingGoal:5,rebufferingGoal:0.5,lowLatencyMode:true},
-  abr:{enabled:true,defaultBandwidthEstimate:2000000}
+  streaming:{
+    bufferingGoal:5,
+    rebufferingGoal:0.5,
+    bufferBehind:10,
+    lowLatencyMode:true,
+    inaccurateManifestTolerance:0,
+    retryParameters:{maxAttempts:10,baseDelay:100,fuzzFactor:0.2,timeout:5000}
+  },
+  abr:{enabled:true,defaultBandwidthEstimate:2000000,switchInterval:1}
  });
 
- const ck=getClearKey(record);
- if(ck) instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",4000)});
+ await instance.load(record.link);if(token!==playbackToken)return;
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
+}
 
- await instance.load(link);
- if(token!==playbackToken)return;
- try{await video.play()}catch(e){}
+async function mountPlayer(record,token){
+ try{
+  await mountShaka(record,token);
+ }catch(err){
+  if(token!==playbackToken)return;
+  console.error("Shaka playback failed:",err);
+  showPlayerError("Unable to start this stream.",err.message||"Check the stream URL and browser compatibility.");
+ }
 }
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){showPlayerError("Unable to start stream.",e.message||"Compatibility error.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
 function renderPlayerStreams(active){
  const box=$("streams");
  const countText=$("channelCountText");
  if(!state.currentStreams.length){
-  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams found.</p></div>';
+  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';
   if(countText) countText.textContent = "0 channels";
   return;
  }
@@ -658,12 +589,11 @@ function renderPlayerStreams(active){
  
  box.innerHTML=state.currentStreams.map((s,i)=>{
   const initials = String(s.title||"CH").split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
-  const badgeType = s.link.includes("soxy") || /\.m3u8(?:\?|$)/i.test(s.link) ? "ios" : "android";
   return `<div class="stream-card ${i===active?"active":""}" data-player-stream="${i}">
     <div class="stream-badge-circle">${esc(initials)}</div>
     <div class="stream-info">
       <div class="title" title="${esc(s.title)}">${esc(s.title)}</div>
-      <div class="meta">${esc(badgeType)}</div>
+      <div class="meta">${esc(s.type)}</div>
     </div>
   </div>`;
  }).join("");
@@ -694,7 +624,7 @@ function showHub(){
 async function openPlayer(id,index){
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
  const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("Match unavailable.");return}
+ if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
  
  const s=getStatus(ev),now=Date.now(),statusText=s==="live"?"Live":s==="soon"?`in ${duration(ev.st-now)}`:"Finished";
@@ -721,7 +651,7 @@ async function openPlayer(id,index){
 
  $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"CricxCrate Player";
  $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No streams available.");
+ renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams for this match.");
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
