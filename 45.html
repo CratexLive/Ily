@@ -86,8 +86,21 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .player-share-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:12.5px;font-weight:700;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--white);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
 .player-share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-deep)}
 
-/* Live Channels Section Header */
-.channels-header{display:flex;align-items:center;justify-content:space-between;max-width:980px;margin:28px auto 12px;padding:0 2px}
+/* Screenshot Match Banner Style */
+.match-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:20px auto 24px;padding:16px 20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.match-banner-team{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.match-banner-team.away{justify-content:flex-end;text-align:right}
+.match-banner-name{font:600 14px/1.3 var(--display);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.match-banner-center{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 8px;flex:none;text-align:center}
+.match-banner-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase}
+.match-banner-status.live{background:rgba(255,51,85,.12);color:var(--live);border:1px solid rgba(255,51,85,.25)}
+.match-banner-status.soon{background:rgba(212,136,6,.12);color:var(--soon);border:1px solid rgba(212,136,6,.25)}
+.match-banner-status.done{background:rgba(92,107,128,.12);color:var(--done);border:1px solid rgba(92,107,128,.25)}
+.match-banner-timer{font-size:11.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.match-banner-league{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+
+/* Live Channels Section */
+.channels-header{display:flex;align-items:center;justify-content:space-between;max-width:980px;margin:24px auto 12px;padding:0 2px}
 .channels-title{font:700 18px var(--display);color:var(--ink)}
 .channels-count{font-size:12.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
 .channels-count .red-dot{width:6px;height:6px;border-radius:50%;background:var(--live)}
@@ -174,6 +187,8 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 <a class="player-tg-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span>Join Telegram</span></a>
 <button class="player-share-btn" id="shareBtn" type="button"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg><span>Share</span></button>
 </div></div>
+
+<div id="matchBannerContainer"></div>
 
 <div class="channels-header">
   <div class="channels-title">Live Channels</div>
@@ -269,11 +284,11 @@ function parseEventsFromData(data){
     if(!s)return;
     const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
-    const isDash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
+    const dash=/\.mpd(?:\?|$)/i.test(link) || String(s.type)==="7";
     streams.push({
      title:String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim(),
      link,
-     type:isDash?"android":"ios",
+     type:dash?"android":"ios",
      key:String(s.key||s.api||"").trim(),
      kid:String(s.kid||"").trim()
     });
@@ -490,12 +505,11 @@ function renderPlayerStreams(active){
  
  box.innerHTML=state.currentStreams.map((s,i)=>{
   const initials = String(s.title||"CH").split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
-  const typeLabel = s.type === "android" ? "DASH" : "HLS";
   return `<div class="stream-card ${i===active?"active":""}" data-player-stream="${i}">
     <div class="stream-badge-circle">${esc(initials)}</div>
     <div class="stream-info">
       <div class="title" title="${esc(s.title)}">${esc(s.title)}</div>
-      <div class="meta">${esc(typeLabel)}</div>
+      <div class="meta">${esc(s.type)}</div>
     </div>
   </div>`;
  }).join("");
@@ -528,6 +542,30 @@ async function openPlayer(id,index){
  const ev=state.events.find(e=>String(e.id)===String(id));
  if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
+ 
+ // Render exact screenshot matching match banner below player
+ const s=getStatus(ev),now=Date.now(),statusText=s==="live"?"Live":s==="soon"?`in ${duration(ev.st-now)}`:"Finished";
+ const statusClass=s;
+ const sideALogo=crest(ev.fa,ev.a||ev.title);
+ const sideBLogo=crest(ev.fb,ev.b||"");
+ 
+ $("matchBannerContainer").innerHTML=`
+ <div class="match-banner">
+   <div class="match-banner-team">
+     ${sideALogo}
+     <div class="match-banner-name">${esc(ev.a||ev.title)}</div>
+   </div>
+   <div class="match-banner-center">
+     <div class="match-banner-status ${statusClass}"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${statusText}</div>
+     <div class="match-banner-timer">${timeString(ev.st)}</div>
+     <div class="match-banner-league">${esc(ev.comp||ev.sport)}</div>
+   </div>
+   <div class="match-banner-team away">
+     <div class="match-banner-name">${esc(ev.b||"")}</div>
+     ${sideBLogo}
+   </div>
+ </div>`;
+
  $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"FootxCrate Player";
  $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
  renderPlayerStreams(index);
@@ -597,7 +635,7 @@ window.addEventListener("hashchange",route);
 loadData();
 
 setInterval(()=>{
- if(window.__booted&&!location.hash.includes("watch")&&!document.hidden){loadData()}
+ if(window.__bootbed&&!location.hash.includes("watch")&&!document.hidden){loadData()}
 },120000);
 
 window.addEventListener("pagehide",()=>{stopPlayback()});
