@@ -278,7 +278,6 @@ function parseEventsFromData(data){
     const en=new Date(st ? st.getTime()+3*3600000 : Date.now()+3*3600000);
     const streams=[];
     
-    // Add stream_url_alpha servers
     if(m.stream_url_alpha && typeof m.stream_url_alpha==='object'){
      Object.entries(m.stream_url_alpha).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
@@ -293,7 +292,6 @@ function parseEventsFromData(data){
      });
     }
     
-    // Add stream_url_bravo servers if present
     if(m.stream_url_bravo && typeof m.stream_url_bravo==='object'){
      Object.entries(m.stream_url_bravo).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
@@ -308,15 +306,12 @@ function parseEventsFromData(data){
      });
     }
 
-    // Intelligently extract Team A vs Team B from title regardless of extra match numbering
     let cleanTitle = m.title || "";
     let teamA = "", teamB = "";
     if(cleanTitle.includes(" vs ")) {
      const vsSplit = cleanTitle.split(" vs ");
      const leftPart = vsSplit[0].trim();
      const rightPart = vsSplit[1].trim();
-     
-     // Extract last token or segment for Team A
      const leftTokens = leftPart.split(" - ");
      teamA = leftTokens[leftTokens.length - 1].trim();
      teamB = rightPart.split(" - ")[0].trim();
@@ -397,14 +392,17 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  // Intelligent Merging by normalized team names and time proximity
+  // Robust Intelligence Merging: Normalize team names and cluster by 3-hour match window
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const cleanA = ev.a ? ev.a.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
    const cleanB = ev.b ? ev.b.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
-   const timeWindow = Math.floor(ev.st.getTime() / (1000 * 60 * 60)); // 1-hour block window to tightly bind identical matches
    
-   const key = (cleanA && cleanB) ? `${cleanA}_${cleanB}_${timeWindow}` : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
+   // Create a stable team-pair key regardless of source ordering
+   const teamPairKey = cleanA && cleanB ? [cleanA, cleanB].sort().join("_") : "";
+   const timeWindow = Math.floor(ev.st.getTime() / (1000 * 60 * 180)); // 3-hour window
+   
+   const key = teamPairKey ? `${teamPairKey}_${timeWindow}` : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
@@ -413,6 +411,8 @@ async function loadData(){
     });
     if(!existing.fa && ev.fa) existing.fa = ev.fa;
     if(!existing.fb && ev.fb) existing.fb = ev.fb;
+    // Keep earliest start time if discrepancy exists
+    if(ev.st < existing.st) existing.st = ev.st;
    }else{
     mergedMap.set(key,ev);
    }
