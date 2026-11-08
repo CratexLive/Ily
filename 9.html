@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Acme&family=Amaranth:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/controls.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
 <style>
 :root{--cream:#F8EFD4;--olive:#5F684C;--white:#FFFFFF;--ink:#141414;--muted:#595959;--accent:#0088cc;--border:rgba(0,0,0,.12);--surface2:#F0E4C3;--surface3:#E4D7B2;--live:#FF3355;--soon:#D48806;--done:#5C6B80;--radius:16px;--shadow:0 12px 35px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);--shadow-deep:0 20px 50px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);--display:'Space Grotesk','Inter',sans-serif;--body:'Inter',system-ui,sans-serif}
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.08);--surface2:#202327;--surface3:#25292E;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
@@ -200,8 +199,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/shaka-player.ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
 <script>
 "use strict";
 const DATA_URLS = [
@@ -212,7 +209,7 @@ const DATA_URLS = [
 const TG_LINK="https://t.me/+PdIwyw8BQiQ4YmRl";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
-let player=null,overlay=null,playbackToken=0,toastTimer=null,hlsInstance=null,plyrInstance=null;
+let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -525,8 +522,6 @@ function getClearKey(record){
 }
 
 async function destroyPlayer(){
- if(plyrInstance){try{plyrInstance.destroy()}catch(e){}plyrInstance=null}
- if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(overlay){try{overlay.destroy()}catch(e){}overlay=null}
  if(player){try{await player.destroy()}catch(e){}player=null}
  const c=$("player-container");if(c)c.innerHTML="";
@@ -535,91 +530,56 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
-/* Bufferless Hybrid Player with HLS Quality Switcher (Gear) */
-async function mountPlayer(record,token){
+/* Bufferless, Low-Latency Shaka Engine for ALL Streams & Devices */
+async function mountShaka(record,token){
+ if(!window.shaka)throw Error("Shaka Player library did not load.");
+ shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
  const c=$("player-container");c.innerHTML="";
- const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
-
- if(isHls && (Hls.isSupported() || document.createElement('video').canPlayTask)){
-  const video=document.createElement("video");video.controls=true;video.playsInline=true;video.autoplay=true;c.appendChild(video);
-  
-  if(Hls.isSupported()){
-   hlsInstance=new Hls({
-    maxBufferLength: 30,
-    maxMaxBufferLength: 60,
-    liveSyncDurationCount: 3,
-    lowLatencyMode: true
-   });
-   hlsInstance.loadSource(record.link);
-   hlsInstance.attachMedia(video);
-   
-   hlsInstance.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-    if(token!==playbackToken) return;
-    const availableQualities = hlsInstance.levels.map((l, index) => index);
-    
-    plyrInstance = new Plyr(video, {
-     controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-     settings: ['quality', 'speed'],
-     quality: {
-      default: availableQualities[availableQualities.length - 1],
-      options: availableQualities,
-      forced: true,
-      onChange: (quality) => { hlsInstance.currentLevel = quality; }
-     }
-    });
-    video.play().catch(()=>{});
-   });
-  } else {
-   video.src = record.link;
-   plyrInstance = new Plyr(video, {controls:['play-large','play','progress','current-time','mute','volume','fullscreen']});
-   video.addEventListener("loadedmetadata",()=>{if(token===playbackToken)video.play().catch(()=>{})},{once:true});
-  }
-  return;
- }
-
- // Bufferless Shaka Player for DASH / MPD streams
- if(!window.shaka)throw Error("Shaka library did not load.");
- shaka.polyfill.installAll();
- if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
- 
- const video=document.createElement("video");video.playsInline=true;video.autoplay=true;c.appendChild(video);
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Cancelled.");
- 
+ const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
+ const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
  const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
- ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"]});
+ ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"],seekBarColors:{base:"#777",buffered:"#D48806",played:"#0088cc",ad:"#fff"}});
 
  instance.configure({
   streaming:{
-    bufferingGoal:3,
-    rebufferingGoal:0.3,
-    bufferBehind:5,
+    bufferingGoal:5,
+    rebufferingGoal:0.5,
+    bufferBehind:10,
     lowLatencyMode:true,
     inaccurateManifestTolerance:0,
-    retryParameters:{maxAttempts:10,baseDelay:100,timeout:5000}
+    retryParameters:{maxAttempts:10,baseDelay:100,fuzzFactor:0.2,timeout:5000}
   },
   abr:{enabled:true,defaultBandwidthEstimate:2000000,switchInterval:1}
  });
 
- const ck=getClearKey(record);
- if(ck) instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",4000)});
+ await instance.load(record.link);if(token!==playbackToken)return;
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
+}
 
- await instance.load(record.link);
- if(token!==playbackToken)return;
- try{await video.play()}catch(e){}
+async function mountPlayer(record,token){
+ try{
+  await mountShaka(record,token);
+ }catch(err){
+  if(token!==playbackToken)return;
+  console.error("Shaka playback failed:",err);
+  showPlayerError("Unable to start this stream.",err.message||"Check the stream URL and browser compatibility.");
+ }
 }
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){showPlayerError("Unable to start stream.",e.message||"Compatibility error.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
 function renderPlayerStreams(active){
  const box=$("streams");
  const countText=$("channelCountText");
  if(!state.currentStreams.length){
-  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams found.</p></div>';
+  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';
   if(countText) countText.textContent = "0 channels";
   return;
  }
@@ -627,12 +587,11 @@ function renderPlayerStreams(active){
  
  box.innerHTML=state.currentStreams.map((s,i)=>{
   const initials = String(s.title||"CH").split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
-  const badgeType = /\.m3u8(?:\?|$)/i.test(s.link) ? "ios" : "android";
   return `<div class="stream-card ${i===active?"active":""}" data-player-stream="${i}">
     <div class="stream-badge-circle">${esc(initials)}</div>
     <div class="stream-info">
       <div class="title" title="${esc(s.title)}">${esc(s.title)}</div>
-      <div class="meta">${esc(badgeType)}</div>
+      <div class="meta">${esc(s.type)}</div>
     </div>
   </div>`;
  }).join("");
@@ -663,7 +622,7 @@ function showHub(){
 async function openPlayer(id,index){
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
  const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("Match unavailable.");return}
+ if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
  
  const s=getStatus(ev),now=Date.now(),statusText=s==="live"?"Live":s==="soon"?`in ${duration(ev.st-now)}`:"Finished";
@@ -690,7 +649,7 @@ async function openPlayer(id,index){
 
  $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"CricxCrate Player";
  $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No streams available.");
+ renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams for this match.");
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
