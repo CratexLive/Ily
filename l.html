@@ -200,21 +200,20 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/shaka-player.ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
 <script>
 "use strict";
 const DATA_URLS = [
   "https://sonujson-v6.pages.dev/Data/events/allinone.json",
   "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json",
-  "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json"
+  "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json",
+  "https://sportlink-fancode10.pages.dev/fan.json"
 ];
 const TG_LINK="https://t.me/+PdIwyw8BQiQ4YmRl";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
-let player=null,overlay=null,playbackToken=0,toastTimer=null,hlsInstance=null,plyrInstance=null;
+let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v?=""||v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     const hash = location.hash;
@@ -241,21 +240,21 @@ function toggleTheme(){
 function parseDate(value){
  if(!value)return null;let s=String(value).trim();if(!s||s==="null"||s==="undefined")return null;
  const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
- 
+
  const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
  if(m1){
   const[,y,mo,d,h,mi,se="00"]=m1;
   const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);
   if(!isNaN(dt))return dt;
  }
- 
+
  const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
  if(m2){
   const[,d,mo,y,h,mi,se]=m2;
   const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);
   if(!isNaN(dt))return dt;
  }
- 
+
  const dt=new Date(s);
  if(!isNaN(dt))return dt;
  return null;
@@ -288,13 +287,84 @@ function normalizeTeamName(name){
   .toLowerCase()
   .replace(/\b(under[-\s]?19|u[-\s]?19)\b/g, "u19")
   .replace(/\b(women|womens|w)\b/g, "")
+  .replace(/\s+(in|tour of|vs|at)\s+.*/i, "")
   .replace(/[^a-z0-9]/g, "")
   .trim();
 }
 
+function parseFanCodeEvents(data) {
+  if (!data || !data.matches) return [];
+  const events = [];
+
+  data.matches.forEach(m => {
+    try {
+      const st = parseDate(m.startTime) || new Date();
+      const en = new Date(st.getTime() + 3 * 3600000);
+      const streams = [];
+
+      if (m.auto_streams && typeof m.auto_streams === 'object') {
+        Object.entries(m.auto_streams).forEach(([lang, langData]) => {
+          if (langData && langData.streams && typeof langData.streams === 'object') {
+            Object.entries(langData.streams).forEach(([quality, streamUrl]) => {
+              if (streamUrl && typeof streamUrl === 'string') {
+                streams.push({
+                  title: `FanCode - ${lang.toUpperCase()} (${quality})`,
+                  link: streamUrl.trim(),
+                  type: "android",
+                  key: "",
+                  kid: ""
+                });
+              }
+            });
+          }
+        });
+      }
+
+      if (!streams.length && m.streams && m.streams.primary) {
+        streams.push({
+          title: `FanCode - Primary`,
+          link: m.streams.primary.trim(),
+          type: "android",
+          key: "",
+          kid: ""
+        });
+      }
+
+      let cleanTitle = m.title || "Match";
+      let teamA = "", teamB = "";
+      if (cleanTitle.includes(" Vs ")) {
+        const parts = cleanTitle.split(" Vs ");
+        teamA = parts[0].trim();
+        teamB = parts[1].trim();
+      } else if (cleanTitle.includes(" vs ")) {
+        const parts = cleanTitle.split(" vs ");
+        teamA = parts[0].trim();
+        teamB = parts[1].trim();
+      }
+
+      events.push({
+        id: String(m.match_id || cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, "")),
+        title: cleanTitle,
+        sport: m.category || "Cricket",
+        comp: m.tournament || "FanCode",
+        a: teamA,
+        b: teamB,
+        fa: m.image || "",
+        fb: m.image || "",
+        status: (m.status || "LIVE").toUpperCase(),
+        st: st,
+        en: en,
+        streams
+      });
+    } catch (e) {}
+  });
+
+  return events;
+}
+
 function parseEventsFromData(data){
  if(!data)return[];
- 
+
  if(data.Matches && Array.isArray(data.Matches)){
   const events=[];
   data.Matches.forEach(m=>{
@@ -302,7 +372,7 @@ function parseEventsFromData(data){
     const st=parseDate(m.time);
     const en=new Date(st ? st.getTime()+3*3600000 : Date.now()+3*3600000);
     const streams=[];
-    
+
     if(m.stream_url_alpha && typeof m.stream_url_alpha==='object'){
      Object.entries(m.stream_url_alpha).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
@@ -316,7 +386,7 @@ function parseEventsFromData(data){
       }
      });
     }
-    
+
     if(m.stream_url_bravo && typeof m.stream_url_bravo==='object'){
      Object.entries(m.stream_url_bravo).forEach(([srvName, link])=>{
       if(link && typeof link==='string'){
@@ -372,7 +442,7 @@ function parseEventsFromData(data){
    if(!st)return;
    let en=parseDate(info.endTimeIST||info.endTime||item.endTime);
    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
-   
+
    const seen=new Set(),streams=[];
    const rawStreams=Array.isArray(item.streams)?item.streams:[];
    rawStreams.forEach((s,i)=>{
@@ -389,7 +459,7 @@ function parseEventsFromData(data){
     });
     seen.add(link);
    });
-   
+
    const teamA=String(info.teamA||info.home||"");
    const teamB=String(info.teamB||info.away||"");
    const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||"Match")).trim();
@@ -415,13 +485,20 @@ async function loadData(){
  try{
   const results=await Promise.all(DATA_URLS.map(url=>fetchJson(url)));
   let allEvents=[];
-  results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
-  
+  results.forEach((res, index)=>{
+    if(!res)return;
+    if(index === 3) {
+      allEvents = allEvents.concat(parseFanCodeEvents(res));
+    } else {
+      allEvents = allEvents.concat(parseEventsFromData(res));
+    }
+  });
+
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const cleanA = normalizeTeamName(ev.a);
    const cleanB = normalizeTeamName(ev.b);
-   
+
    const teamPairKey = cleanA && cleanB ? [cleanA, cleanB].sort().join("_vs_") : "";
    const key = teamPairKey ? teamPairKey : ev.title.toLowerCase().replace(/[^a-z0-9]/g,"");
 
@@ -525,8 +602,6 @@ function getClearKey(record){
 }
 
 async function destroyPlayer(){
- if(plyrInstance){try{plyrInstance.destroy()}catch(e){}plyrInstance=null}
- if(hlsInstance){try{hlsInstance.destroy()}catch(e){}hlsInstance=null}
  if(overlay){try{overlay.destroy()}catch(e){}overlay=null}
  if(player){try{await player.destroy()}catch(e){}player=null}
  const c=$("player-container");if(c)c.innerHTML="";
@@ -535,75 +610,68 @@ async function destroyPlayer(){
 async function stopPlayback(){playbackToken++;await destroyPlayer()}
 function showPlayerError(message,detail=""){const c=$("player-container");c.innerHTML=`<div class="screen-msg">${esc(message)}${detail?`<small>${esc(detail)}</small>`:""}</div>`}
 
-/* Hybrid Player Engine: Shaka for DASH/DRM, Hls.js + Plyr for M3U8 */
-async function mountPlayer(record,token){
- const c=$("player-container");c.innerHTML="";
- const isHls = record.type === "ios" || /\.m3u8(?:\?|$)/i.test(record.link);
-
- if(isHls && (Hls.isSupported() || document.createElement('video').canPlayType('application/vnd.apple.mpegurl'))){
-  const video=document.createElement("video");video.controls=true;video.playsInline=true;video.autoplay=true;c.appendChild(video);
-  if(Hls.isSupported()){
-   hlsInstance=new Hls();
-   hlsInstance.loadSource(record.link);
-   hlsInstance.attachMedia(video);
-   hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{if(token===playbackToken)video.play().catch(()=>{})});
-  }else{
-   video.src=record.link;
-   video.addEventListener("loadedmetadata",()=>{if(token===playbackToken)video.play().catch(()=>{})},{once:true});
-  }
-  plyrInstance=new Plyr(video,{controls:['play-large','play','progress','current-time','mute','volume','fullscreen']});
-  return;
- }
-
- // Shaka Player for DASH / MPD streams
+/* Bufferless, Low-Latency Optimized Shaka Engine for ALL Streams & Devices */
+async function mountShaka(record,token){
  if(!window.shaka)throw Error("Shaka Player library did not load.");
- shaka.polyfill.installAll();
- if(!shaka.Player.isBrowserSupported())throw Error("Browser not supported.");
- 
- const video=document.createElement("video");video.playsInline=true;video.autoplay=true;c.appendChild(video);
- const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Cancelled.");
- 
+ shaka.polyfill.installAll();if(!shaka.Player.isBrowserSupported())throw Error("This browser does not support Shaka playback.");
+ const c=$("player-container");c.innerHTML="";
+ const video=document.createElement("video");video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.controls=false;c.appendChild(video);
+ const instance=new shaka.Player();player=instance;await instance.attach(video);if(token!==playbackToken)throw Error("Playback cancelled.");
  const ui=new shaka.ui.Overlay(instance,c,video);overlay=ui;
- ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"]});
+ ui.configure({controlPanelElements:["play_pause","mute","volume","time_and_duration","spacer","quality","picture_in_picture","fullscreen","overflow_menu"],overflowMenuButtons:["quality","language","captions","playback_rate","picture_in_picture"],seekBarColors:{base:"#777",buffered:"#D48806",played:"#0088cc",ad:"#fff"}});
 
  instance.configure({
-  streaming:{bufferingGoal:5,rebufferingGoal:0.5,bufferBehind:10,lowLatencyMode:true,retryParameters:{maxAttempts:10,baseDelay:100,timeout:5000}},
-  abr:{enabled:true,defaultBandwidthEstimate:2000000}
+  streaming:{
+    bufferingGoal:5,
+    rebufferingGoal:0.5,
+    bufferBehind:10,
+    lowLatencyMode:true,
+    inaccurateManifestTolerance:0,
+    retryParameters:{maxAttempts:10,baseDelay:100,fuzzFactor:0.2,timeout:5000}
+  },
+  abr:{enabled:true,defaultBandwidthEstimate:2000000,switchInterval:1}
  });
 
- const ck=getClearKey(record);
- if(ck) instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+ instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",4000)});
+ await instance.load(record.link);if(token!==playbackToken)return;
+ try{await video.play()}catch(e){showToast("Tap Play to start the stream","",4000)}
+}
 
- await instance.load(record.link);
- if(token!==playbackToken)return;
- try{await video.play()}catch(e){}
+async function mountPlayer(record,token){
+ try{
+  await mountShaka(record,token);
+ }catch(err){
+  if(token!==playbackToken)return;
+  console.error("Shaka playback failed:",err);
+  showPlayerError("Unable to start this stream.",err.message||"Check the stream URL and browser compatibility.");
+ }
 }
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){showPlayerError("Unable to start stream.",e.message||"Compatibility error.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token!==playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
 function renderPlayerStreams(active){
  const box=$("streams");
  const countText=$("channelCountText");
  if(!state.currentStreams.length){
-  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams found.</p></div>';
+  box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';
   if(countText) countText.textContent = "0 channels";
   return;
  }
  if(countText) countText.textContent = `${state.currentStreams.length} channel${state.currentStreams.length>1?'s':''}`;
- 
+
  box.innerHTML=state.currentStreams.map((s,i)=>{
   const initials = String(s.title||"CH").split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
-  const badgeType = /\.m3u8(?:\?|$)/i.test(s.link) ? "ios" : "android";
   return `<div class="stream-card ${i===active?"active":""}" data-player-stream="${i}">
     <div class="stream-badge-circle">${esc(initials)}</div>
     <div class="stream-info">
       <div class="title" title="${esc(s.title)}">${esc(s.title)}</div>
-      <div class="meta">${esc(badgeType)}</div>
+      <div class="meta">${esc(s.type)}</div>
     </div>
   </div>`;
  }).join("");
@@ -613,11 +681,11 @@ function route(){
  const raw=location.hash.replace(/^#\/?/,"");
  const[path,query]=raw.split("?");
  const p=new URLSearchParams(query||"");
- 
+
  if(!isAdmin() && (path !== "watch" || !p.get("id"))) {
   window.location.replace(TG_LINK);
   return;
- }
+}
 
  if(path==="watch") openPlayer(p.get("id"),Math.max(0,Number(p.get("stream")||0)));
  else showHub();
@@ -634,14 +702,14 @@ function showHub(){
 async function openPlayer(id,index){
  $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
  const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("Match unavailable.");return}
+ if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
  state.currentEvent=ev;state.currentStreams=ev.streams||[];state.currentIndex=index;
- 
+
  const s=getStatus(ev),now=Date.now(),statusText=s==="live"?"Live":s==="soon"?`in ${duration(ev.st-now)}`:"Finished";
  const statusClass=s;
  const sideALogo=crest(ev.fa,ev.a||ev.title);
  const sideBLogo=crest(ev.fb,ev.b||"");
- 
+
  $("matchBannerContainer").innerHTML=`
  <div class="match-banner">
    <div class="match-banner-team">
@@ -661,7 +729,7 @@ async function openPlayer(id,index){
 
  $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"CricxCrate Player";
  $("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No streams available.");
+ renderPlayerStreams(index);const rec=state.currentStreams[index];if(rec)await playRecord(rec,index);else showPlayerError("No playable streams for this match.");
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
@@ -708,8 +776,8 @@ $("list").addEventListener("click",e=>{
  if(e.target.closest("#retryLoad")){loadData();return}
 });
 
-$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
+$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}},{passive:true});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}},{passive:true});
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
 $("backHub").addEventListener("click",()=>{
