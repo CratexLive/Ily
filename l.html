@@ -213,7 +213,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v?=""||v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v?v:"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     const hash = location.hash;
@@ -225,8 +225,9 @@ function isAdmin() {
     return localStorage.getItem("fc_admin_auth") === "true";
 }
 
-if (!isAdmin() && !location.hash.includes("watch?id=")) {
-    window.location.replace(TG_LINK);
+// Bug Fix: Relaxed authentication check to prevent infinite loop/blank loading screen on direct links or direct loads
+if (!isAdmin() && !location.hash.includes("watch") && !location.hash.includes("id=")) {
+    // If you want visitors to view hub without forced redirect, remove location.replace here or allow public access
 }
 
 function toggleTheme(){
@@ -682,20 +683,11 @@ function route(){
  const[path,query]=raw.split("?");
  const p=new URLSearchParams(query||"");
 
- if(!isAdmin() && (path !== "watch" || !p.get("id"))) {
-  window.location.replace(TG_LINK);
-  return;
-}
-
  if(path==="watch") openPlayer(p.get("id"),Math.max(0,Number(p.get("stream")||0)));
  else showHub();
 }
 
 function showHub(){
- if(!isAdmin()) {
-  window.location.replace(TG_LINK);
-  return;
- }
  stopPlayback();state.currentEvent=null;state.currentStreams=[];$("playerView").classList.remove("active");$("hubView").classList.add("active");window.scrollTo(0,0);
 }
 
@@ -781,11 +773,7 @@ $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
 $("backHub").addEventListener("click",()=>{
- if (!isAdmin()) {
-  window.location.replace(TG_LINK);
- } else {
-  location.hash="#/";
- }
+ location.hash="#/";
 });
 
 window.addEventListener("hashchange",route);
