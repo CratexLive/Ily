@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Acme&family=Amaranth:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.3.3/dist/controls.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
 <style>
 :root{--cream:#F8EFD4;--olive:#5F684C;--white:#FFFFFF;--ink:#141414;--muted:#595959;--accent:#0088cc;--border:rgba(0,0,0,.12);--surface2:#F0E4C3;--surface3:#E4D7B2;--live:#FF3355;--soon:#D48806;--done:#5C6B80;--radius:16px;--shadow:0 12px 35px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);--shadow-deep:0 20px 50px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);--display:'Space Grotesk','Inter',sans-serif;--body:'Inter',system-ui,sans-serif}
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.08);--surface2:#202327;--surface3:#25292E;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
@@ -285,6 +286,7 @@ function normalizeTeamName(name){
   .toLowerCase()
   .replace(/\b(under[-\s]?19|u[-\s]?19)\b/g, "u19")
   .replace(/\b(women|womens|w)\b/g, "")
+  .replace(/\s+(in|tour of|vs|at)\s+.*/i, "")
   .replace(/[^a-z0-9]/g, "")
   .trim();
 }
@@ -696,8 +698,8 @@ $("list").addEventListener("click",e=>{
  if(e.target.closest("#retryLoad")){loadData();return}
 });
 
-$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
+$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}},{passive:true});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}},{passive:true});
 $("streams").addEventListener("click",e=>{const b=e.target.closest("[data-player-stream]");if(!b||!state.currentEvent)return;const i=Number(b.dataset.playerStream);if(!state.currentStreams[i])return;state.currentIndex=i;history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream=${i}`);playRecord(state.currentStreams[i],i)});
 
 $("backHub").addEventListener("click",()=>{
