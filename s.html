@@ -340,43 +340,27 @@ async function fetchJson(url){
 }catch(err){return null;}
 }
 
-// Comprehensive normalizer for formats (ODI, T20I, Test, Match Numbers, etc.)
-function normalizeMatchTitle(title) {
- let clean = String(title || "").toLowerCase().trim();
+// Full Smart Flexible Match & Team Normalization Engine
+function cleanTeamName(name) {
+ let clean = String(name || "").toLowerCase().trim();
  
- // Replace word numbers with digits
- clean = clean.replace(/\bfirst\b/g, "1st")
-              .replace(/\bsecond\b/g, "2nd")
-              .replace(/\bthird\b/g, "3rd")
-              .replace(/\bfourth\b/g, "4th")
-              .replace(/\bfifth\b/g, "5th");
+ const teamMapping = {
+  "nz": "newzealand", "new zealand": "newzealand",
+  "ind": "india", "india": "india",
+  "pak": "pakistan", "pakistan": "pakistan",
+  "aus": "australia", "australia": "australia",
+  "eng": "england", "england": "england",
+  "afg": "afghanistan", "afghanistan": "afghanistan",
+  "zim": "zimbabwe", "zimbabwe": "zimbabwe",
+  "sl": "srilanka", "sri lanka": "srilanka", "srilanka": "srilanka"
+ };
 
- // Normalize match formats & terminology
- clean = clean.replace(/\bone day international\b/g, "odi")
-              .replace(/\bt20 international\b/g, "t20i")
-              .replace(/\bt twenty international\b/g, "t20i")
-              .replace(/\btest match\b/g, "test");
+ if (teamMapping[clean]) return teamMapping[clean];
 
- // Extract teams if "vs" exists
- const vsRegex = /\s+(?:vs\.?|v)\s+/i;
- if (vsRegex.test(clean)) {
-  const parts = clean.split(vsRegex);
-  let teamA = parts[0].replace(/[^a-z]/g, "").trim();
-  let teamB = parts[parts.length - 1].replace(/[^a-z]/g, "").trim();
-  
-  // Extract match number or type specifier (e.g., 3rd odi, 1st test)
-  let matchSpec = "";
-  const matchNumRegex = /\b(\d+(?:st|nd|rd|th)?\s*(?:odi|test|t20i?|match))\b/i;
-  const matchFound = clean.match(matchNumRegex);
-  if (matchFound) {
-      matchSpec = matchFound[1].replace(/[^a-z0-9]/g, "");
-  }
-
-  const sortedTeams = [teamA, teamB].sort().join("_");
-  return `${sortedTeams}_${matchSpec}`;
- }
-
- return clean.replace(/[^a-z0-9]/g, "");
+ return clean
+  .replace(/\b(tour of|in|mens?|women'?s?|under[-\s]?19|u[-\s]?19|wt20|odi|test|t20i?|xi|cricket|series|trophy|cup|league)\b/gi, "")
+  .replace(/[^a-z0-9]/g, "")
+  .trim();
 }
 
 function parseMatchTeams(title) {
@@ -397,6 +381,31 @@ function parseMatchTeams(title) {
   return { a: rawA, b: rawB };
  }
  return { a: clean, b: "" };
+}
+
+function generateFlexibleMergeKey(event) {
+ try {
+  const teams = parseMatchTeams(event.title || (event.a + " vs " + event.b));
+  const normA = cleanTeamName(teams.a);
+  const normB = cleanTeamName(teams.b);
+
+  let dateKey = "nodate";
+  if (event.st) {
+   const dt = new Date(event.st);
+   if (!isNaN(dt.getTime())) {
+    dateKey = dt.toISOString().split('T')[0];
+   }
+  }
+
+  if (normA && normB) {
+   const sortedPair = [normA, normB].sort().join("_");
+   return `${sortedPair}_${dateKey}`;
+  }
+
+  return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+ } catch(e) {
+  return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+ }
 }
 
 function parseEventsFromData(data, sourceUrl = ""){
@@ -472,6 +481,13 @@ function parseEventsFromData(data, sourceUrl = ""){
 
    const coverImg = isWillow ? "" : String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||"");
 
+   const tempEvent = {
+    title: matchTitle,
+    a: teamA,
+    b: teamB,
+    st
+   };
+
    events.push({
     id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
@@ -479,7 +495,7 @@ function parseEventsFromData(data, sourceUrl = ""){
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a: teamA,
     b: teamB,
-    mergeKey: normalizeMatchTitle(matchTitle),
+    mergeKey: generateFlexibleMergeKey(tempEvent),
     fa: coverImg,
     fb: coverImg,
     status:String(item.status||"").toUpperCase(),
