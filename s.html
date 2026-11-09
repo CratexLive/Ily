@@ -337,7 +337,46 @@ async function fetchJson(url){
   const txt=await res.text();
   if(!txt||txt.trim().startsWith("<"))throw Error("Invalid");
   return JSON.parse(txt);
- }catch(err){return null;}
+}catch(err){return null;}
+}
+
+// Comprehensive normalizer for formats (ODI, T20I, Test, Match Numbers, etc.)
+function normalizeMatchTitle(title) {
+ let clean = String(title || "").toLowerCase().trim();
+ 
+ // Replace word numbers with digits
+ clean = clean.replace(/\bfirst\b/g, "1st")
+              .replace(/\bsecond\b/g, "2nd")
+              .replace(/\bthird\b/g, "3rd")
+              .replace(/\bfourth\b/g, "4th")
+              .replace(/\bfifth\b/g, "5th");
+
+ // Normalize match formats & terminology
+ clean = clean.replace(/\bone day international\b/g, "odi")
+              .replace(/\bt20 international\b/g, "t20i")
+              .replace(/\bt twenty international\b/g, "t20i")
+              .replace(/\btest match\b/g, "test");
+
+ // Extract teams if "vs" exists
+ const vsRegex = /\s+(?:vs\.?|v)\s+/i;
+ if (vsRegex.test(clean)) {
+  const parts = clean.split(vsRegex);
+  let teamA = parts[0].replace(/[^a-z]/g, "").trim();
+  let teamB = parts[parts.length - 1].replace(/[^a-z]/g, "").trim();
+  
+  // Extract match number or type specifier (e.g., 3rd odi, 1st test)
+  let matchSpec = "";
+  const matchNumRegex = /\b(\d+(?:st|nd|rd|th)?\s*(?:odi|test|t20i?|match))\b/i;
+  const matchFound = clean.match(matchNumRegex);
+  if (matchFound) {
+      matchSpec = matchFound[1].replace(/[^a-z0-9]/g, "");
+  }
+
+  const sortedTeams = [teamA, teamB].sort().join("_");
+  return `${sortedTeams}_${matchSpec}`;
+ }
+
+ return clean.replace(/[^a-z0-9]/g, "");
 }
 
 function parseMatchTeams(title) {
@@ -358,14 +397,6 @@ function parseMatchTeams(title) {
   return { a: rawA, b: rawB };
  }
  return { a: clean, b: "" };
-}
-
-function normalizeTeam(name) {
- return String(name || "")
-  .toLowerCase()
-  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test|t20i?|xi|cricket)\b/gi, "")
-  .replace(/[^a-z0-9]/g, "")
-  .trim();
 }
 
 function parseEventsFromData(data, sourceUrl = ""){
@@ -439,7 +470,6 @@ function parseEventsFromData(data, sourceUrl = ""){
    let teamA = info.teamA || info.home || item.homeTeam || teams.a;
    let teamB = info.teamB || info.away || item.awayTeam || teams.b;
 
-   // STRICT RULE: Never take image/thumbnail/logo from Willow JSON
    const coverImg = isWillow ? "" : String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||"");
 
    events.push({
@@ -449,8 +479,7 @@ function parseEventsFromData(data, sourceUrl = ""){
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a: teamA,
     b: teamB,
-    normA: normalizeTeam(teamA),
-    normB: normalizeTeam(teamB),
+    mergeKey: normalizeMatchTitle(matchTitle),
     fa: coverImg,
     fb: coverImg,
     status:String(item.status||"").toUpperCase(),
@@ -478,8 +507,7 @@ async function loadData(){
     comp:"FootxCrate Hub",
     a:"FootxCrate",
     b:"Server Live",
-    normA:"footxcrate",
-    normB:"serverlive",
+    mergeKey:"footxcrate_serverlive",
     fa:"",
     fb:"",
     status:"LIVE",
@@ -491,21 +519,13 @@ async function loadData(){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   let key = "";
-   if(ev.normA && ev.normB) {
-    const sortedTeams = [ev.normA, ev.normB].sort();
-    const dateKey = ev.st.toISOString().split('T')[0];
-    key = `${sortedTeams[0]}_${sortedTeams[1]}_${dateKey}`;
-   } else {
-    key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
-   }
+   const key = ev.mergeKey || ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
      if(!existing.streams.some(x=>x.link===st.link)){existing.streams.push(st);}
     });
-    // If existing flags are empty but new event has flags, adopt them
     if(!existing.fa && ev.fa) existing.fa = ev.fa;
     if(!existing.fb && ev.fb) existing.fb = ev.fb;
    }else{
@@ -524,8 +544,7 @@ async function loadData(){
    comp:"FootxCrate Hub",
    a:"FootxCrate",
    b:"Server Live",
-   normA:"footxcrate",
-   normB:"serverlive",
+   mergeKey:"footxcrate_serverlive",
    fa:"",
    fb:"",
    status:"LIVE",
@@ -758,8 +777,7 @@ async function openPlayer(id, targetStreamId){
     comp:"FootxCrate Hub",
     a:"FootxCrate",
     b:"Server Live",
-    normA:"footxcrate",
-    normB:"serverlive",
+    mergeKey:"footxcrate_serverlive",
     fa:"",
     fb:"",
     status:"LIVE",
@@ -771,14 +789,7 @@ async function openPlayer(id, targetStreamId){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   let key = "";
-   if(ev.normA && ev.normB) {
-    const sortedTeams = [ev.normA, ev.normB].sort();
-    const dateKey = ev.st.toISOString().split('T')[0];
-    key = `${sortedTeams[0]}_${sortedTeams[1]}_${dateKey}`;
-   } else {
-    key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
-   }
+   const key = ev.mergeKey || ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
