@@ -322,7 +322,7 @@ async function fetchJson(url){
 }
 
 function parseEventsFromData(data){
- // Support both direct array and object with 'Matches' array (Willow JSON structure)
+ // Handle all formats: Monirul Islam, allinone, and Willow JSON (Matches / events / matches)
  const list = Array.isArray(data) ? data : (Array.isArray(data?.Matches) ? data.Matches : (Array.isArray(data?.events) ? data.events : (Array.isArray(data?.matches) ? data.matches : Object.values(data||{}))));
  if(!list||!Array.isArray(list))return[];
  const events=[];
@@ -383,14 +383,18 @@ function parseEventsFromData(data){
      title:channelName,
      link,
      type:dash?"android":"ios",
-     key:String(s.key||s.api||item.drm_key||"").trim(),
+     key:String(s.key||s.api||s.drm_key||item.drm_key||"").trim(),
      kid:String(s.kid||"").trim()
     });
    });
 
    const matchTitle=String(item.title||info.title||item.event_name||"Match").trim();
    let teamA="Match", teamB="";
-   if(matchTitle.includes(" - ")) {
+   if(matchTitle.includes(" vs ")) {
+    const teams = matchTitle.split(" vs ");
+    teamA = teams[0].trim();
+    teamB = teams[1].trim();
+   } else if(matchTitle.includes(" - ")) {
     const parts = matchTitle.split(" - ");
     const lastPart = parts[parts.length - 1];
     if(lastPart.includes(" vs ")) {
@@ -406,7 +410,7 @@ function parseEventsFromData(data){
     id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
     sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
-    comp:String(info.type||info.eventName||item.title||item.tournament||"Willow Cricket").trim(),
+    comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a:teamA,
     b:teamB,
     fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
