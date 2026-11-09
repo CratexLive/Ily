@@ -578,7 +578,6 @@ async function playRecord(record,index){
  });
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- window.currentPlayingStreamLink = link;
  try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
@@ -713,25 +712,29 @@ async function openPlayer(id, targetStreamId){
 
 function closePopup(){$("popup").classList.remove("visible")}
 
-// Handle stream link copying with animation toast
-async function handleShareStreamLink() {
- const link = window.currentPlayingStreamLink || (state.currentStreams[state.currentIndex] ? state.currentStreams[state.currentIndex].link : "");
- if(!link) {
-  showToast("No active stream link to share","",2500);
+// Share App URL with Match and Channel IDs
+async function handleShareMatchLink() {
+ if(!state.currentEvent) {
+  showToast("No active match to share","",2500);
   return;
  }
+ const currentStream = state.currentStreams[state.currentIndex];
+ const streamId = currentStream ? currentStream.id : "0";
+ 
+ const shareUrl = `${location.origin}${location.pathname}#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream_id=${encodeURIComponent(streamId)}`;
+
  try {
   if(navigator.clipboard && navigator.clipboard.writeText) {
-   await navigator.clipboard.writeText(link);
+   await navigator.clipboard.writeText(shareUrl);
   } else {
    const ta = document.createElement("textarea");
-   ta.value = link;
+   ta.value = shareUrl;
    document.body.appendChild(ta);
    ta.select();
    document.execCommand("copy");
    document.body.removeChild(ta);
   }
-  showToast("Stream link copied to clipboard!","",3000);
+  showToast("Exact match link copied!","",3000);
  } catch(e) {
   showToast("Failed to copy link","",2500);
  }
@@ -758,8 +761,8 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("popupSkipBtn").addEventListener("click",closePopup);
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
 
- $("shareStreamIconBtn").addEventListener("click", handleShareStreamLink);
- $("shareStreamTextBtn").addEventListener("click", handleShareStreamLink);
+ $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
+ $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
 });
 
 $("list").addEventListener("click",e=>{
