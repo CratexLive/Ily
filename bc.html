@@ -15,14 +15,12 @@
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.1);--surface2:#202327;--surface3:#2A2E33;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font:400 15px/1.5 var(--body);color:var(--ink);background:var(--cream);min-height:100vh;padding-bottom:40px;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;position:relative}
 
-/* Watery Fluid Flow Background Animation */
 body:before{content:"";position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(95,104,76,.16),transparent 45%),radial-gradient(circle at 70% 70%,rgba(0,136,204,.12),transparent 50%),radial-gradient(circle at 50% 50%,rgba(255,51,85,.07),transparent 55%);animation:wateryFlow 16s ease infinite alternate;pointer-events:none;z-index:0}
 @keyframes wateryFlow{0%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(-30px,20px) rotate(3deg) scale(1.03)}100%{transform:translate(20px,-25px) rotate(-3deg) scale(0.97)}}
 
 button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none;will-change:transform;transition:transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.18s ease}button:active{transform:scale(0.93)!important}a{color:var(--accent);text-decoration:none}img{display:block;max-width:100%}[hidden]{display:none!important}:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .container{max-width:1320px;margin:auto;padding:0 20px;position:relative;z-index:1}.view{display:none}.view.active{display:block;animation:fade .28s cubic-bezier(0.16, 1, 0.3, 1)}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* Single Line Header Styling */
 .header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:22px;background:var(--white);margin-left:-20px;margin-right:-20px;box-shadow:var(--shadow);flex-wrap:nowrap}
 .brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:0 6px 20px rgba(0,136,204,.3);flex:none}
@@ -53,7 +51,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pill[data-tab=live].active{color:var(--live);background:rgba(255,51,85,.15);border-color:var(--live)}
 .pill[data-tab=live].active .count{background:rgba(255,51,85,.25);color:var(--live)}
 
-/* Match Grid 1 column */
 .grid{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:48px}
 
 .card{display:flex;flex-direction:column;gap:14px;padding:20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);text-align:left;font:inherit;color:inherit;transition:all .3s cubic-bezier(0.16, 1, 0.3, 1);position:relative;overflow:hidden;box-shadow:var(--shadow);width:100%}
@@ -63,8 +60,9 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .card.is-live:before{background:linear-gradient(90deg,transparent,var(--live),transparent);opacity:.95}
 .card.is-live{border-color:rgba(255,51,85,.35);box-shadow:0 12px 35px rgba(255,51,85,.08),0 2px 6px rgba(0,0,0,.04)}
 
-.card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0;flex:1;overflow:hidden}
+/* FIXED OVERLAPPING ISSUE: Structured card header with flex-wrap and proper spacing */
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1 1 180px;min-width:0}
 .sport-chip .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .card-main-click{background:none;border:0;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;display:block;padding:0}
@@ -88,9 +86,11 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .watch-cta{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:700;font-size:12.5px;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);cursor:pointer;background:none;border:0}
 .watch-cta:hover{gap:8px;transform:translateX(2px)}
 
-.status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
+.status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}
+.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}
+.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}
+.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
 
-/* Player Top Header Styling */
 .player-top-header{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;position:relative;max-width:980px;margin:0 auto}
 .player-brand-badge{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
 .player-brand-badge .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,136,204,.3)}
@@ -106,7 +106,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .quality-toast{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.88);color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .quality-toast.show{opacity:1}
 
-/* Team vs Team match header inside player view */
 .player-match-showcase{display:flex;align-items:center;justify-content:center;gap:24px;padding:16px 0 8px;max-width:980px;margin:0 auto;position:relative}
 .pm-team{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center}
 .pm-team .crest{width:52px;height:52px}
@@ -114,7 +113,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pm-center-box{display:flex;flex-direction:column;align-items:center;gap:4px}
 .pm-vs{font:700 13px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 
-/* Small compact top bar for Share icon and Share button above vs */
 .pm-top-actions{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:20px;box-shadow:var(--shadow)}
 .pm-tg-icon-btn{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--olive),var(--accent));color:#fff;display:grid;place-items:center;font-size:11px;transition:transform .2s;cursor:pointer}
 .pm-tg-icon-btn:hover{transform:scale(1.1)}
@@ -124,7 +122,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .section-title{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);max-width:980px;margin:20px auto 10px}
 
-/* Channel / Stream Card Grid (4 columns) */
 .streams{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:980px;margin:0 auto}
 .stream-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 10px;background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);text-align:center;cursor:pointer;transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275);position:relative}
 .stream-card:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-3px);box-shadow:var(--shadow-deep)}
@@ -136,7 +133,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;text-align:center}.state h3{font:600 18px var(--display)}.state p{color:var(--muted);font-size:13.5px;max-width:440px}.err-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,51,85,.12);color:var(--live);display:grid;place-items:center;font-size:20px;box-shadow:0 6px 18px rgba(255,51,85,.2)}
 .screen-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;background:#080808;color:#fff;font:600 15px var(--body);z-index:5}.screen-msg small{font-weight:400;color:#aaa;max-width:90%;overflow-wrap:anywhere}
 
-/* Popup Styling */
 .popup-overlay{position:fixed;inset:0;background:rgba(20,20,20,.75);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;z-index:2147483647;opacity:0;visibility:hidden;transition:.3s}
 .popup-overlay.visible{display:flex;opacity:1;visibility:visible}
 
@@ -182,7 +178,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </div>
 
 <div class="container">
-<!-- Initial view dynamically determined based on URL hash -->
 <section id="hubView" class="view">
 <header class="header">
   <div class="brand">
@@ -205,7 +200,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </section>
 
 <section id="playerView" class="view">
-  <!-- Top Bar with Left Premium Branding and Right Get App Button -->
   <div class="player-top-header">
     <div class="player-brand-badge">
       <div class="brand-mark">FC</div>
@@ -217,10 +211,8 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
     </a>
   </div>
 
-  <!-- Video Player -->
   <div class="screen"><div id="player-container"><div class="screen-msg">Loading stream…</div></div></div>
 
-  <!-- Team vs Team Logos & Names with Share Action Bar Above VS -->
   <div class="player-match-showcase" id="playerMatchShowcase">
     <div class="pm-team">
       <div class="crest" id="pmCrestA">?</div>
@@ -241,7 +233,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
     </div>
   </div>
 
-  <!-- Channel Grid (4 columns) -->
   <h3 class="section-title">Live Channels</h3>
   <div class="streams" id="streams"></div>
 </section>
@@ -260,7 +251,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v?=""??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     try {
@@ -385,7 +376,6 @@ function generateUltimateMergeKey(event) {
         if (!normA || !normB) {
             return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         }
-
         return [normA, normB].sort().join("_");
     } catch(e) {
         return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
