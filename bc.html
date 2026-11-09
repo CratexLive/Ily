@@ -375,8 +375,8 @@ function parseMatchTeams(title) {
  return { a: clean, b: "" };
 }
 
-// Universal AI-Level Merge Key Builder for Cross-JSON Unification
-function generateUnifiedMergeKey(event) {
+// STRICT PURE TEAM-PAIR MERGE KEY (Completely Time-Independent to prevent split cards)
+function generateStrictTeamPairKey(event) {
     try {
         const teams = parseMatchTeams(event.title || (event.a + " vs " + event.b));
         const normA = cleanTeamName(teams.a || event.a);
@@ -388,6 +388,7 @@ function generateUnifiedMergeKey(event) {
 
         const sortedPair = [normA, normB].sort().join("_");
         
+        // Match specifier (1st, 2nd, 3rd ODI, Test, etc.)
         let specifier = "";
         const fullText = (event.title + " " + event.comp).toLowerCase();
         
@@ -494,7 +495,7 @@ function parseEventsFromData(data, sourceUrl = ""){
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a: teamA,
     b: teamB,
-    mergeKey: generateUnifiedMergeKey(tempEvent),
+    mergeKey: generateStrictTeamPairKey(tempEvent),
     fa: coverImg,
     fb: coverImg,
     status:String(item.status||"").toUpperCase(),
