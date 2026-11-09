@@ -321,8 +321,11 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
+function cleanTeamName(name) {
+ return String(name || "").replace(/\s+in\s+.*$/i, "").trim();
+}
+
 function parseEventsFromData(data){
- // Handle all formats: Monirul Islam, allinone, and Willow JSON (Matches / events / matches)
  const list = Array.isArray(data) ? data : (Array.isArray(data?.Matches) ? data.Matches : (Array.isArray(data?.events) ? data.events : (Array.isArray(data?.matches) ? data.matches : Object.values(data||{}))));
  if(!list||!Array.isArray(list))return[];
  const events=[];
@@ -336,7 +339,6 @@ function parseEventsFromData(data){
 
    const seen=new Set(),streams=[];
    
-   // Parse Willow JSON format (stream_url_alpha, stream_url_bravo, drm_key)
    if(item.stream_url_alpha && typeof item.stream_url_alpha === 'object') {
     Object.entries(item.stream_url_alpha).forEach(([srvName, link])=>{
      if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
@@ -366,7 +368,6 @@ function parseEventsFromData(data){
     });
    }
 
-   // Standard streams array parsing
    const rawStreams=Array.isArray(item.streams)?item.streams:(Array.isArray(info.streams)?info.streams:[]);
    rawStreams.forEach((s,i)=>{
     if(!s)return;
@@ -392,18 +393,21 @@ function parseEventsFromData(data){
    let teamA="Match", teamB="";
    if(matchTitle.includes(" vs ")) {
     const teams = matchTitle.split(" vs ");
-    teamA = teams[0].trim();
-    teamB = teams[1].trim();
+    teamA = cleanTeamName(teams[0]);
+    teamB = cleanTeamName(teams[1]);
    } else if(matchTitle.includes(" - ")) {
     const parts = matchTitle.split(" - ");
     const lastPart = parts[parts.length - 1];
     if(lastPart.includes(" vs ")) {
      const teams = lastPart.split(" vs ");
-     teamA = teams[0].trim();
-     teamB = teams[1].trim();
+     teamA = cleanTeamName(teams[0]);
+     teamB = cleanTeamName(teams[1]);
     } else {
-     teamA = lastPart;
+     teamA = cleanTeamName(lastPart);
     }
+   } else {
+    teamA = cleanTeamName(info.teamA || info.home || item.homeTeam || matchTitle);
+    teamB = cleanTeamName(info.teamB || info.away || item.awayTeam || "");
    }
 
    events.push({
