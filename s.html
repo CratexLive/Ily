@@ -321,15 +321,18 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
-// Comprehensive Team Name Normalizer for 100% accurate merging across different JSONs
 function cleanTeamName(name) {
  if(!name) return "";
- return String(name)
-  .replace(/\b(Under[- ]?19|U[- ]?19|Mens|Women|XI|A|B)\b/gi, "")
-  .replace(/\s+in\s+.*$/i, "")
-  .replace(/[^a-zA-Z0-9]/g, "")
-  .toLowerCase()
-  .trim();
+ try {
+  return String(name)
+   .replace(/\b(Under[- ]?19|U[- ]?19|Mens|Women|XI|A|B)\b/gi, "")
+   .replace(/\s+in\s+.*$/i, "")
+   .replace(/[^a-zA-Z0-9]/g, "")
+   .toLowerCase()
+   .trim();
+ } catch(e) {
+  return String(name).toLowerCase().trim();
+ }
 }
 
 function parseEventsFromData(data){
@@ -471,7 +474,6 @@ async function loadData(){
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
-    // Combine team names nicely if one has full suffix
     if(ev.a.length > existing.a.length) existing.a = ev.a;
     if(ev.b.length > existing.b.length) existing.b = ev.b;
     if(!existing.fa && ev.fa) existing.fa = ev.fa;
