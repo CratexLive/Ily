@@ -298,7 +298,6 @@ function parseDate(value){
   if(!value)return new Date(Date.now() + 3600000);
   let s=String(value).trim();if(!s||s==="null"||s==="undefined")return new Date(Date.now() + 3600000);
   
-  // Handle Willow format text like "Live at 7:15 PM BDT" or "Tomorrow 8 AM BDT" or "Wed, Nov 11 2:10 PM BDT"
   const upperS = s.toUpperCase();
   const now = new Date();
   if (upperS.includes("LIVE AT") || upperS.includes("TOMORROW") || upperS.includes("BDT")) {
@@ -341,10 +340,32 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
-function cleanTeamName(name) {
+// Ultra-smart team extractor and normalizer to bridge differences across JSON feeds
+function extractTeamsFromTitle(title) {
+ const clean = String(title || "").trim();
+ // Check if " vs " exists
+ if (clean.toLowerCase().includes(" vs ")) {
+  const parts = clean.split(/ \bvs\b /i);
+  let teamA = parts[0].trim();
+  let teamB = parts[parts.length - 1].trim();
+  
+  // Clean trailing tournament info like " - 1st Test - Afghanistan vs Zimbabwe"
+  if (teamA.includes(" - ")) {
+   const subParts = teamA.split(" - ");
+   teamA = subParts[subParts.length - 1].trim();
+  }
+  if (teamB.includes(" - ")) {
+   teamB = teamB.split(" - ")[0].trim();
+  }
+  return { a: teamA, b: teamB };
+ }
+ return { a: clean, b: "" };
+}
+
+function normalizeTeamName(name) {
  return String(name || "")
   .replace(/\s+in\s+.*$/i, "")
-  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test)\b/gi, "")
+  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test|tour of.*)\b/gi, "")
   .replace(/[^a-zA-Z0-9]/g, "")
   .toLowerCase()
   .trim();
@@ -364,7 +385,6 @@ function parseEventsFromData(data){
 
    const seen=new Set(),streams=[];
    
-   // Handle Willow stream_url_alpha object format
    if(item.stream_url_alpha && typeof item.stream_url_alpha === 'object') {
     Object.entries(item.stream_url_alpha).forEach(([srvName, link])=>{
      if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
@@ -379,7 +399,6 @@ function parseEventsFromData(data){
      }
     });
    }
-   // Handle Willow stream_url_bravo object format
    if(item.stream_url_bravo && typeof item.stream_url_bravo === 'object') {
     Object.entries(item.stream_url_bravo).forEach(([srvName, link])=>{
      if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
@@ -417,38 +436,20 @@ function parseEventsFromData(data){
    });
 
    const matchTitle=String(item.title||info.title||item.event_name||"Match").trim();
-   let teamA="Match", teamB="";
-   if(matchTitle.includes(" vs ")) {
-    const teams = matchTitle.split(" vs ");
-    teamA = cleanTeamName(teams[0]);
-    teamB = cleanTeamName(teams[1]);
-   } else if(matchTitle.includes(" - ")) {
-    const parts = matchTitle.split(" - ");
-    const lastPart = parts[parts.length - 1];
-    if(lastPart.includes(" vs ")) {
-     const teams = lastPart.split(" vs ");
-     teamA = cleanTeamName(teams[0]);
-     teamB = cleanTeamName(teams[1]);
-    } else {
-     teamA = cleanTeamName(lastPart);
-    }
-   } else {
-    teamA = cleanTeamName(info.teamA || info.home || item.homeTeam || matchTitle);
-    teamB = cleanTeamName(info.teamB || info.away || item.awayTeam || "");
-   }
-
-   let dispA = info.teamA || item.homeTeam || (matchTitle.includes(" vs ") ? matchTitle.split(" vs ")[0] : matchTitle);
-   let dispB = info.teamB || item.awayTeam || (matchTitle.includes(" vs ") ? matchTitle.split(" vs ")[1] : "");
+   const extracted = extractTeamsFromTitle(matchTitle);
+   
+   let teamA = info.teamA || info.home || item.homeTeam || extracted.a;
+   let teamB = info.teamB || info.away || item.awayTeam || extracted.b;
 
    events.push({
     id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
     sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
-    a: dispA,
-    b: dispB,
-    normA: teamA,
-    normB: teamB,
+    a: teamA,
+    b: teamB,
+    normA: normalizeTeamName(teamA),
+    normB: normalizeTeamName(teamB),
     fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
     fb:String(item.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
@@ -489,7 +490,7 @@ async function loadData(){
    let key = "";
    if(ev.normA && ev.normB) {
     const sortedTeams = [ev.normA, ev.normB].sort();
-    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 120));
+    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 180)); // 3-hour window matching
     key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
    } else {
     key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -763,7 +764,7 @@ async function openPlayer(id, targetStreamId){
    let key = "";
    if(ev.normA && ev.normB) {
     const sortedTeams = [ev.normA, ev.normB].sort();
-    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 120));
+    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 180));
     key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
    } else {
     key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
