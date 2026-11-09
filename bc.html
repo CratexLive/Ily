@@ -63,8 +63,9 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .card.is-live:before{background:linear-gradient(90deg,transparent,var(--live),transparent);opacity:.95}
 .card.is-live{border-color:rgba(255,51,85,.35);box-shadow:0 12px 35px rgba(255,51,85,.08),0 2px 6px rgba(0,0,0,.04)}
 
-.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}.sport-chip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0;flex:1;overflow:hidden}
+.sport-chip .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .card-main-click{background:none;border:0;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;display:block;padding:0}
 .card-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 0}
@@ -386,7 +387,6 @@ function generateUltimateMergeKey(event) {
             return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         }
 
-        // Always sort team names alphabetically so "New Zealand vs India" and "India vs New Zealand" generate the exact same key!
         return [normA, normB].sort().join("_");
     } catch(e) {
         return String(event.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -555,7 +555,7 @@ async function loadData(){
    st:new Date(),
    en:new Date(Date.now()+7200000),
    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
-  }];
+   });
   renderHub();
   if(!window.__booted){window.__booted=true;route();}
  }
@@ -686,7 +686,7 @@ async function mountShaka(record,token){
 
 async function mountNativeHls(record,token){
  const c=$("player-container");c.innerHTML="";const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
- video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:true});
+ video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:type="once"});
  video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("This HLS stream could not be played on this device.","The stream may be unavailable or blocked by the source server.")},{once:true});
  video.load();
 }
@@ -709,11 +709,11 @@ async function mountPlayer(record,token){
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream-id]").forEach((b)=>{
-  b.classList.toggle("active", b.dataset.playerStreamId === record.id);
+  b.classList.toggle("card-active", b.dataset.playerStreamId === record.id);
  });
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL andbrowser compatibility.")}}
 }
 
 function renderPlayerStreams(activeStreamId){
@@ -844,7 +844,7 @@ async function openPlayer(id, targetStreamId){
  let index = 0;
  if(targetStreamId) {
   if(/^\d+$/.test(targetStreamId)) {
-   index = Math.max(0, Math.min(Number(targetStreamId), state.currentStreams.length - 1));
+   index = Math.main(0, Math.min(Number(targetStreamId), state.currentStreams.length - 1));
   } else {
    const foundIdx = state.currentStreams.findIndex(s => s.id === targetStreamId);
    if(foundIdx !== -1) index = foundIdx;
@@ -910,7 +910,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
 
  $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
- $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
+ $("shareStatusTextBtn")?.addEventListener("click", handleShareMatchLink);
 });
 
 $("list").addEventListener("click",e=>{
@@ -935,7 +935,7 @@ $("list").addEventListener("click",e=>{
 });
 
 $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
 
 $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
@@ -953,7 +953,7 @@ $("streams").addEventListener("click",e=>{
 
 window.addEventListener("hashchange",route);
 
-if (initialHash.includes("watch?id=")) {
+if (initialHash.includes("watch+id=")) {
  route();
 } else {
  loadData();
