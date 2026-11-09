@@ -322,7 +322,8 @@ async function fetchJson(url){
 }
 
 function parseEventsFromData(data){
- const list=Array.isArray(data)?data:(Array.isArray(data?.matches)?data.matches:(Array.isArray(data?.events)?data.events:Object.values(data||{})));
+ // Support both direct array and object with 'Matches' array (Willow JSON structure)
+ const list = Array.isArray(data) ? data : (Array.isArray(data?.Matches) ? data.Matches : (Array.isArray(data?.events) ? data.events : (Array.isArray(data?.matches) ? data.matches : Object.values(data||{}))));
  if(!list||!Array.isArray(list))return[];
  const events=[];
  list.forEach((item)=>{
@@ -335,7 +336,7 @@ function parseEventsFromData(data){
 
    const seen=new Set(),streams=[];
    
-   // Handle Willow JSON format (stream_url_alpha, stream_url_bravo, drm_key)
+   // Parse Willow JSON format (stream_url_alpha, stream_url_bravo, drm_key)
    if(item.stream_url_alpha && typeof item.stream_url_alpha === 'object') {
     Object.entries(item.stream_url_alpha).forEach(([srvName, link])=>{
      if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
@@ -409,7 +410,7 @@ function parseEventsFromData(data){
     a:teamA,
     b:teamB,
     fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
-    fb:String(info.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
+    fb:String(item.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
     st,en,streams
    });
