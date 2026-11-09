@@ -321,8 +321,14 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
+// Advanced Normalizer to clean team names so similar names always merge
 function cleanTeamName(name) {
- return String(name || "").replace(/\s+in\s+.*$/i, "").trim();
+ return String(name || "")
+  .replace(/\b(Under[- ]?19|U[- ]?19|Mens|Women|XI|A|B)\b/gi, "")
+  .replace(/\s+in\s+.*$/i, "")
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .toLowerCase()
+  .trim();
 }
 
 function parseEventsFromData(data){
@@ -391,23 +397,29 @@ function parseEventsFromData(data){
 
    const matchTitle=String(item.title||info.title||item.event_name||"Match").trim();
    let teamA="Match", teamB="";
-   if(matchTitle.includes(" vs ")) {
+   
+   const rawTeamA = info.teamA || info.home || item.homeTeam || "";
+   const rawTeamB = info.teamB || info.away || item.awayTeam || "";
+
+   if(rawTeamA && rawTeamB) {
+    teamA = rawTeamA;
+    teamB = rawTeamB;
+   } else if(matchTitle.includes(" vs ")) {
     const teams = matchTitle.split(" vs ");
-    teamA = cleanTeamName(teams[0]);
-    teamB = cleanTeamName(teams[1]);
+    teamA = teams[0].trim();
+    teamB = teams[1].trim();
    } else if(matchTitle.includes(" - ")) {
     const parts = matchTitle.split(" - ");
     const lastPart = parts[parts.length - 1];
     if(lastPart.includes(" vs ")) {
      const teams = lastPart.split(" vs ");
-     teamA = cleanTeamName(teams[0]);
-     teamB = cleanTeamName(teams[1]);
+     teamA = teams[0].trim();
+     teamB = teams[1].trim();
     } else {
-     teamA = cleanTeamName(lastPart);
+     teamA = lastPart;
     }
    } else {
-    teamA = cleanTeamName(info.teamA || info.home || item.homeTeam || matchTitle);
-    teamB = cleanTeamName(info.teamB || info.away || item.awayTeam || "");
+    teamA = matchTitle;
    }
 
    events.push({
@@ -452,7 +464,10 @@ async function loadData(){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
+   const normA = cleanTeamName(ev.a);
+   const normB = cleanTeamName(ev.b);
+   const key = (normA && normB) ? `${normA}_vs_${normB}` : ev.title.toLowerCase();
+
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
@@ -702,7 +717,10 @@ async function openPlayer(id, targetStreamId){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
+   const normA = cleanTeamName(ev.a);
+   const normB = cleanTeamName(ev.b);
+   const key = (normA && normB) ? `${normA}_vs_${normB}` : ev.title.toLowerCase();
+
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
@@ -838,8 +856,8 @@ $("list").addEventListener("click",e=>{
  if(e.target.closest("#retryLoad")){loadData();return}
 });
 
-$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
+$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
 
 $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
