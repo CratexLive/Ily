@@ -340,34 +340,35 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
-// Ultra-smart team extractor and normalizer to bridge differences across JSON feeds
-function extractTeamsFromTitle(title) {
+// Ultra-Robust Intelligence Team Extractor for Cross-JSON Merging
+function parseMatchTeams(title) {
  const clean = String(title || "").trim();
- // Check if " vs " exists
- if (clean.toLowerCase().includes(" vs ")) {
-  const parts = clean.split(/ \bvs\b /i);
-  let teamA = parts[0].trim();
-  let teamB = parts[parts.length - 1].trim();
-  
-  // Clean trailing tournament info like " - 1st Test - Afghanistan vs Zimbabwe"
-  if (teamA.includes(" - ")) {
-   const subParts = teamA.split(" - ");
-   teamA = subParts[subParts.length - 1].trim();
+ // Split by various vs formats
+ const vsRegex = /\s+(?:vs\.?|v)\s+/i;
+ if (vsRegex.test(clean)) {
+  const parts = clean.split(vsRegex);
+  let rawA = parts[0].trim();
+  let rawB = parts[parts.length - 1].trim();
+
+  // Strip tournament context headers from team A (e.g., "Tour of UAE 2026 - 1st Test - Afghanistan" -> "Afghanistan")
+  if (rawA.includes(" - ")) {
+   const sub = rawA.split(" - ");
+   rawA = sub[sub.length - 1].trim();
   }
-  if (teamB.includes(" - ")) {
-   teamB = teamB.split(" - ")[0].trim();
+  // Strip trailing context from team B
+  if (rawB.includes(" - ")) {
+   rawB = rawB.split(" - ")[0].trim();
   }
-  return { a: teamA, b: teamB };
+  return { a: rawA, b: rawB };
  }
  return { a: clean, b: "" };
 }
 
-function normalizeTeamName(name) {
+function normalizeTeam(name) {
  return String(name || "")
-  .replace(/\s+in\s+.*$/i, "")
-  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test|tour of.*)\b/gi, "")
-  .replace(/[^a-zA-Z0-9]/g, "")
   .toLowerCase()
+  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test|t20i?|xi|cricket)\b/gi, "")
+  .replace(/[^a-z0-9]/g, "")
   .trim();
 }
 
@@ -436,10 +437,10 @@ function parseEventsFromData(data){
    });
 
    const matchTitle=String(item.title||info.title||item.event_name||"Match").trim();
-   const extracted = extractTeamsFromTitle(matchTitle);
+   const teams = parseMatchTeams(matchTitle);
    
-   let teamA = info.teamA || info.home || item.homeTeam || extracted.a;
-   let teamB = info.teamB || info.away || item.awayTeam || extracted.b;
+   let teamA = info.teamA || info.home || item.homeTeam || teams.a;
+   let teamB = info.teamB || info.away || item.awayTeam || teams.b;
 
    events.push({
     id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
@@ -448,8 +449,8 @@ function parseEventsFromData(data){
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a: teamA,
     b: teamB,
-    normA: normalizeTeamName(teamA),
-    normB: normalizeTeamName(teamB),
+    normA: normalizeTeam(teamA),
+    normB: normalizeTeam(teamB),
     fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
     fb:String(item.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
@@ -464,7 +465,7 @@ async function loadData(){
  try{
   const results=await Promise.all(DATA_URLS.map(url=>fetchJson(url)));
   let allEvents=[];
-  results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
+  results.exports = results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
   if(allEvents.length === 0) {
    allEvents.push({
@@ -490,8 +491,8 @@ async function loadData(){
    let key = "";
    if(ev.normA && ev.normB) {
     const sortedTeams = [ev.normA, ev.normB].sort();
-    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 180)); // 3-hour window matching
-    key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
+    const dateKey = ev.st.toISOString().split('T')[0]; // Combine matches happening on the same calendar day between same teams
+    key = `${sortedTeams[0]}_${sortedTeams[1]}_${dateKey}`;
    } else {
     key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
    }
@@ -764,8 +765,8 @@ async function openPlayer(id, targetStreamId){
    let key = "";
    if(ev.normA && ev.normB) {
     const sortedTeams = [ev.normA, ev.normB].sort();
-    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 180));
-    key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
+    const dateKey = ev.st.toISOString().split('T')[0];
+    key = `${sortedTeams[0]}_${sortedTeams[1]}_${dateKey}`;
    } else {
     key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
    }
