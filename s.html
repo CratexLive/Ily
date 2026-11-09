@@ -262,13 +262,17 @@ let player=null,overlay=null,playbackToken=0,toastTimer=null;
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
-    const hash = location.hash;
-    if (hash.includes("admin?key=mayank@45")) {
-        localStorage.setItem("fc_admin_auth", "true");
-        location.hash = "#/";
+    try {
+        const hash = location.hash;
+        if (hash.includes("admin?key=mayank@45")) {
+            localStorage.setItem("fc_admin_auth", "true");
+            location.hash = "#/";
+            return true;
+        }
+        return localStorage.getItem("fc_admin_auth") === "true";
+    } catch(e) {
         return true;
     }
-    return localStorage.getItem("fc_admin_auth") === "true";
 }
 
 const initialHash = location.hash;
@@ -290,14 +294,18 @@ function toggleTheme(){
 }
 
 function parseDate(value){
- if(!value)return new Date(Date.now() + 3600000);
- let s=String(value).trim();if(!s||s==="null"||s==="undefined")return new Date(Date.now() + 3600000);
- const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
- const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
- if(m1){const[,y,mo,d,h,mi,se="00"]=m1;const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);if(!isNaN(dt))return dt;}
- const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
- if(m2){const[,d,mo,y,h,mi,se]=m2;const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);if(!isNaN(dt))return dt;}
- const dt=new Date(s);return isNaN(dt)?new Date(Date.now() + 3600000):dt;
+ try {
+  if(!value)return new Date(Date.now() + 3600000);
+  let s=String(value).trim();if(!s||s==="null"||s==="undefined")return new Date(Date.now() + 3600000);
+  const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
+  const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m1){const[,y,mo,d,h,mi,se="00"]=m1;const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);if(!isNaN(dt))return dt;}
+  const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+  if(m2){const[,d,mo,y,h,mi,se]=m2;const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);if(!isNaN(dt))return dt;}
+  const dt=new Date(s);return isNaN(dt)?new Date(Date.now() + 3600000):dt;
+ } catch(e) {
+  return new Date(Date.now() + 3600000);
+ }
 }
 
 function getStatus(e){const n=Date.now();return n<e.st?"soon":n<=e.en?"live":"done"}
@@ -322,7 +330,12 @@ async function fetchJson(url){
 }
 
 function cleanTeamName(name) {
- return String(name || "").replace(/\s+in\s+.*$/i, "").trim();
+ return String(name || "")
+  .replace(/\s+in\s+.*$/i, "")
+  .replace(/\b(under[-\s]?19|u[-\s]?19|mens?|women'?s?|wt20|odi|test)\b/gi, "")
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .toLowerCase()
+  .trim();
 }
 
 function parseEventsFromData(data){
@@ -410,13 +423,19 @@ function parseEventsFromData(data){
     teamB = cleanTeamName(info.teamB || info.away || item.awayTeam || "");
    }
 
+   // Fallback readable names for display
+   let dispA = info.teamA || item.homeTeam || (matchTitle.includes(" vs ") ? matchTitle.split(" vs ")[0] : matchTitle);
+   let dispB = info.teamB || item.awayTeam || (matchTitle.includes(" vs ") ? matchTitle.split(" vs ")[1] : "");
+
    events.push({
     id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
     sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
     comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
-    a:teamA,
-    b:teamB,
+    a: dispA,
+    b: dispB,
+    normA: teamA,
+    normB: teamB,
     fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
     fb:String(item.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
@@ -441,6 +460,8 @@ async function loadData(){
     comp:"FootxCrate Hub",
     a:"FootxCrate",
     b:"Server Live",
+    normA:"footxcrate",
+    normB:"serverlive",
     fa:"",
     fb:"",
     status:"LIVE",
@@ -452,7 +473,16 @@ async function loadData(){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
+   // Intelligent merging based on normalized team names or similar timestamps
+   let key = "";
+   if(ev.normA && ev.normB) {
+    const sortedTeams = [ev.normA, ev.normB].sort();
+    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 120)); // within 2 hour window
+    key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
+   } else {
+    key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+   }
+
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
@@ -474,6 +504,8 @@ async function loadData(){
    comp:"FootxCrate Hub",
    a:"FootxCrate",
    b:"Server Live",
+   normA:"footxcrate",
+   normB:"serverlive",
    fa:"",
    fb:"",
    status:"LIVE",
@@ -487,42 +519,46 @@ async function loadData(){
 }
 
 function renderHub(){
- if(!$("hubView").classList.contains("active")) return;
- const sportFilteredEvents=state.events.filter(e=>{
-  const matchSport=state.sport==="All"||e.sport===state.sport;
-  const matchQuery=!state.searchQuery||[e.a,e.b,e.comp,e.sport,e.title].some(x=>String(x||"").toLowerCase().includes(state.searchQuery));
-  return matchSport&&matchQuery;
- });
+ try {
+  if(!$("hubView").classList.contains("active")) return;
+  const sportFilteredEvents=state.events.filter(e=>{
+   const matchSport=state.sport==="All"||e.sport===state.sport;
+   const matchQuery=!state.searchQuery||[e.a,e.b,e.comp,e.sport,e.title].some(x=>String(x||"").toLowerCase().includes(state.searchQuery));
+   return matchSport&&matchQuery;
+  });
 
- const counts={live:0,soon:0,done:0,favs:0};
- sportFilteredEvents.forEach(e=>{
-  counts[getStatus(e)]++;
-  if(state.favsTeams.includes(e.a)||state.favsTeams.includes(e.b)) counts.favs++;
- });
+  const counts={live:0,soon:0,done:0,favs:0};
+  sportFilteredEvents.forEach(e=>{
+   counts[getStatus(e)]++;
+   if(state.favsTeams.includes(e.a)||state.favsTeams.includes(e.b)) counts.favs++;
+  });
 
- const sports=["All",...new Set(state.events.map(e=>e.sport).filter(Boolean))];
+  const sports=["All",...new Set(state.events.map(e=>e.sport).filter(Boolean))];
 
- $("sports").innerHTML=sports.map(s=>{
-  const n=s==="All"?state.events.length:state.events.filter(e=>e.sport===s).length;
-  return `<button class="pill ${state.sport===s?"active":""}" data-sport="${esc(s)}" role="tab">${esc(s)}<span class="count">${n}</span></button>`;
- }).join("");
+  $("sports").innerHTML=sports.map(s=>{
+   const n=s==="All"?state.events.length:state.events.filter(e=>e.sport===s).length;
+   return `<button class="pill ${state.sport===s?"active":""}" data-sport="${esc(s)}" role="tab">${esc(s)}<span class="count">${n}</span></button>`;
+  }).join("");
 
- $("tabs").innerHTML=[
-  ["all","All",sportFilteredEvents.length],
-  ["live","Live",counts.live],
-  ["soon","Upcoming",counts.soon],
-  ["favs",`⭐ Fav Teams`,state.favsTeams.length]
- ].map(([k,l,n])=>`<button class="pill ${state.tab===k?"active":""}" data-tab="${k}" role="tab">${l}<span class="count">${n}</span></button>`).join("");
+  $("tabs").innerHTML=[
+   ["all","All",sportFilteredEvents.length],
+   ["live","Live",counts.live],
+   ["soon","Upcoming",counts.soon],
+   ["favs",`⭐ Fav Teams`,state.favsTeams.length]
+  ].map(([k,l,n])=>`<button class="pill ${state.tab===k?"active":""}" data-tab="${k}" role="tab">${l}<span class="count">${n}</span></button>`).join("");
 
- const rows=sportFilteredEvents.filter(e=>{
-  if(state.tab==="live") return getStatus(e)==="live";
-  if(state.tab==="soon") return getStatus(e)==="soon";
-  if(state.tab==="favs") return state.favsTeams.includes(e.a)||state.favsTeams.includes(e.b);
-  return true;
- }).sort((a,b)=>{const o={live:0,soon:1,done:2},d=o[getStatus(a)]-o[getStatus(b)];return d||a.st-b.st});
+  const rows=sportFilteredEvents.filter(e=>{
+   if(state.tab==="live") return getStatus(e)==="live";
+   if(state.tab==="soon") return getStatus(e)==="soon";
+   if(state.tab==="favs") return state.favsTeams.includes(e.a)||state.favsTeams.includes(e.b);
+   return true;
+  }).sort((a,b)=>{const o={live:0,soon:1,done:2},d=o[getStatus(a)]-o[getStatus(b)];return d||a.st-b.st});
 
- $("list").innerHTML=rows.length?rows.map(eventCard).join(""):`<div class="state"><h3>No matches found</h3><p>Try another team, tournament or filter.</p></div>`;
- $("clock").textContent=new Date().toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" IST";
+  $("list").innerHTML=rows.length?rows.map(eventCard).join(""):`<div class="state"><h3>No matches found</h3><p>Try another team, tournament or filter.</p></div>`;
+  $("clock").textContent=new Date().toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" IST";
+ } catch(err) {
+  console.error("Render error:", err);
+ }
 }
 
 function eventCard(e){
@@ -555,14 +591,18 @@ function showToast(message,kind="info",ms=3500){
 }
 
 function getClearKey(record){
- const kid=String(record.kid||"").trim().toLowerCase();
- const key=String(record.key||"").trim().toLowerCase();
- if(kid&&key&&/^[0-9a-f]+$/.test(kid)&&/^[0-9a-f]+$/.test(key))return{keyId:kid,key};
- const raw=String(record.key||"").trim();
- if(!raw.includes(":"))return null;const p=raw.split(":");if(p.length<2)return null;
- const parsedKid=p.shift().trim().replace(/^0x/i,"").toLowerCase();
- const parsedKey=p.join(":").trim().replace(/^0x/i,"").toLowerCase();
- return /^[0-9a-f]+$/.test(parsedKid)&&/^[0-9a-f]+$/.test(parsedKey)?{keyId:parsedKid,key:parsedKey}:null;
+ try {
+  const kid=String(record.kid||"").trim().toLowerCase();
+  const key=String(record.key||"").trim().toLowerCase();
+  if(kid&&key&&/^[0-9a-f]+$/.test(kid)&&/^[0-9a-f]+$/.test(key))return{keyId:kid,key};
+  const raw=String(record.key||"").trim();
+  if(!raw.includes(":"))return null;const p=raw.split(":");if(p.length<2)return null;
+  const parsedKid=p.shift().trim().replace(/^0x/i,"").toLowerCase();
+  const parsedKey=p.join(":").trim().replace(/^0x/i,"").toLowerCase();
+  return /^[0-9a-f]+$/.test(parsedKid)&&/^[0-9a-f]+$/.test(parsedKey)?{keyId:parsedKid,key:parsedKey}:null;
+ } catch(e) {
+  return null;
+ }
 }
 
 async function destroyPlayer(){
@@ -647,20 +687,24 @@ function renderPlayerStreams(activeStreamId){
 }
 
 function route(){
- const raw=location.hash.replace(/^#\/?/,"");
- const[path,query]=raw.split("?");
- const p=new URLSearchParams(query||"");
+ try {
+  const raw=location.hash.replace(/^#\/?/,"");
+  const[path,query]=raw.split("?");
+  const p=new URLSearchParams(query||"");
 
- if(!isAdmin() && (path !== "watch" || !p.get("id"))) {
-  window.location.replace(TG_LINK);
-  return;
- }
+  if(!isAdmin() && (path !== "watch" || !p.get("id"))) {
+   window.location.replace(TG_LINK);
+   return;
+  }
 
- if(path==="watch") {
-  const matchId = p.get("id");
-  const streamId = p.get("stream_id") || p.get("stream");
-  openPlayer(matchId, streamId);
- } else {
+  if(path==="watch") {
+   const matchId = p.get("id");
+   const streamId = p.get("stream_id") || p.get("stream");
+   openPlayer(matchId, streamId);
+  } else {
+   showHub();
+  }
+ } catch(e) {
   showHub();
  }
 }
@@ -691,6 +735,8 @@ async function openPlayer(id, targetStreamId){
     comp:"FootxCrate Hub",
     a:"FootxCrate",
     b:"Server Live",
+    normA:"footxcrate",
+    normB:"serverlive",
     fa:"",
     fb:"",
     status:"LIVE",
@@ -702,7 +748,14 @@ async function openPlayer(id, targetStreamId){
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
-   const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
+   let key = "";
+   if(ev.normA && ev.normB) {
+    const sortedTeams = [ev.normA, ev.normB].sort();
+    const timeSlot = Math.floor(ev.st.getTime() / (1000 * 60 * 120));
+    key = `${sortedTeams[0]}_${sortedTeams[1]}_${timeSlot}`;
+   } else {
+    key = ev.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+   }
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
     ev.streams.forEach(st=>{
