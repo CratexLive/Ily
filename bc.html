@@ -376,7 +376,7 @@ function parseMatchTeams(title) {
  return { a: clean, b: "" };
 }
 
-// ULTIMATE PURE TEAM-PAIR MERGE KEY (Ignores extra match text, titles & dates completely for 100% reliable cross-JSON merging)
+// ULTIMATE PURE TEAM-PAIR MERGE KEY (Fully unified across SonuJSON, Willow & Monirul JSONs)
 function generateUltimateMergeKey(event) {
     try {
         const teams = parseMatchTeams(event.title || (event.a + " vs " + event.b));
@@ -555,7 +555,7 @@ async function loadData(){
    st:new Date(),
    en:new Date(Date.now()+7200000),
    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
-   });
+  }];
   renderHub();
   if(!window.__booted){window.__booted=true;route();}
  }
@@ -686,7 +686,7 @@ async function mountShaka(record,token){
 
 async function mountNativeHls(record,token){
  const c=$("player-container");c.innerHTML="";const video=document.createElement("video");video.controls=true;video.playsInline=true;video.setAttribute("playsinline","");video.setAttribute("webkit-playsinline","");video.autoplay=true;video.preload="auto";video.src=record.link;c.appendChild(video);
- video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:type="once"});
+ video.addEventListener("loadedmetadata",()=>{if(token!==playbackToken)return;video.play().catch(()=>showToast("Tap Play to start the stream","",4000))},{once:true});
  video.addEventListener("error",()=>{if(token!==playbackToken)return;showPlayerError("This HLS stream could not be played on this device.","The stream may be unavailable or blocked by the source server.")},{once:true});
  video.load();
 }
@@ -709,11 +709,11 @@ async function mountPlayer(record,token){
 
 async function playRecord(record,index){
  if(!record)return;document.querySelectorAll("[data-player-stream-id]").forEach((b)=>{
-  b.classList.toggle("card-active", b.dataset.playerStreamId === record.id);
+  b.classList.toggle("active", b.dataset.playerStreamId === record.id);
  });
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
- try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL andbrowser compatibility.")}}
+ try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
 }
 
 function renderPlayerStreams(activeStreamId){
@@ -844,7 +844,7 @@ async function openPlayer(id, targetStreamId){
  let index = 0;
  if(targetStreamId) {
   if(/^\d+$/.test(targetStreamId)) {
-   index = Math.main(0, Math.min(Number(targetStreamId), state.currentStreams.length - 1));
+   index = Math.max(0, Math.min(Number(targetStreamId), state.currentStreams.length - 1));
   } else {
    const foundIdx = state.currentStreams.findIndex(s => s.id === targetStreamId);
    if(foundIdx !== -1) index = foundIdx;
@@ -910,7 +910,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
 
  $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
- $("shareStatusTextBtn")?.addEventListener("click", handleShareMatchLink);
+ $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
 });
 
 $("list").addEventListener("click",e=>{
@@ -935,7 +935,7 @@ $("list").addEventListener("click",e=>{
 });
 
 $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
 
 $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
@@ -953,7 +953,7 @@ $("streams").addEventListener("click",e=>{
 
 window.addEventListener("hashchange",route);
 
-if (initialHash.includes("watch+id=")) {
+if (initialHash.includes("watch?id=")) {
  route();
 } else {
  loadData();
