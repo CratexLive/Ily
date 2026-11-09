@@ -137,6 +137,8 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 /* Popup Styling */
 .popup-overlay{position:fixed;inset:0;background:rgba(20,20,20,.75);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;z-index:2147483647;opacity:0;visibility:hidden;transition:.3s}
+.popup-overlay.visible{display:flex;opacity:1;visibility:visible}
+
 .popup-wrap{width:100%;max-width:410px;padding:3px;background:linear-gradient(145deg,var(--olive),#0088cc,var(--olive));border-radius:26px;box-shadow:0 20px 60px rgba(0,136,204,.35),0 35px 80px rgba(0,0,0,.5);transform:scale(.8) translateY(25px);opacity:0;transition:transform .4s cubic-bezier(.175,.885,.32,1.275),opacity .3s, max-width .35s}
 .popup-overlay.visible .popup-wrap{transform:scale(1);opacity:1}
 
@@ -319,29 +321,60 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
+function cleanTeamName(name) {
+ return String(name || "").replace(/\s+in\s+.*$/i, "").trim();
+}
+
 function parseEventsFromData(data){
- const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:(Array.isArray(data?.matches)?data.matches:[]));
+ const list = Array.isArray(data) ? data : (Array.isArray(data?.Matches) ? data.Matches : (Array.isArray(data?.events) ? data.events : (Array.isArray(data?.matches) ? data.matches : Object.values(data||{}))));
  if(!list||!Array.isArray(list))return[];
  const events=[];
  list.forEach((item)=>{
   try{
    if(!item)return;
-   const info=item.event||item.eventInfo||{};
-   const st=parseDate(info.startTimeIST||info.startTime||item.startTime);
-   if(!st)return;
+   const info=item.event||item.eventInfo||item.matchInfo||item;
+   const st=parseDate(info.startTimeIST||info.startTime||item.startTime||item.time);
    let en=parseDate(info.endTimeIST||info.endTime||item.endTime);
    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
 
    const seen=new Set(),streams=[];
-   const rawStreams=Array.isArray(item.streams)?item.streams:[];
+   
+   if(item.stream_url_alpha && typeof item.stream_url_alpha === 'object') {
+    Object.entries(item.stream_url_alpha).forEach(([srvName, link])=>{
+     if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
+      seen.add(link);
+      streams.push({
+       id: srvName.toLowerCase().replace(/[^a-z0-9]/g,"_"),
+       title: srvName,
+       link,
+       type: "android",
+       key: String(item.drm_key || "").trim()
+      });
+     }
+    });
+   }
+   if(item.stream_url_bravo && typeof item.stream_url_bravo === 'object') {
+    Object.entries(item.stream_url_bravo).forEach(([srvName, link])=>{
+     if(link && typeof link === 'string' && /^https?:\/\//i.test(link) && !seen.has(link)) {
+      seen.add(link);
+      streams.push({
+       id: "bravo_" + srvName.toLowerCase().replace(/[^a-z0-9]/g,"_"),
+       title: "Bravo - " + srvName,
+       link,
+       type: "android",
+       key: String(item.drm_key || "").trim()
+      });
+     }
+    });
+   }
+
+   const rawStreams=Array.isArray(item.streams)?item.streams:(Array.isArray(info.streams)?info.streams:[]);
    rawStreams.forEach((s,i)=>{
     if(!s)return;
-    const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
+    const link=String(s.stream_url||s.link||s.url||s.src||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
     const t=String(s.type||"").toLowerCase();
     const dash=t==="dash"||/\.mpd(?:\?|$)/i.test(link);
-    const hls=t==="hls"||t==="0"||/\.m3u8(?:\?|$)/i.test(link);
-    if(!dash&&!hls)return;
     seen.add(link);
     
     const channelName=String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim();
@@ -351,24 +384,41 @@ function parseEventsFromData(data){
      title:channelName,
      link,
      type:dash?"android":"ios",
-     key:String(s.key||s.api||"").trim(),
+     key:String(s.key||s.api||s.drm_key||item.drm_key||"").trim(),
      kid:String(s.kid||"").trim()
     });
    });
 
-   const teamA=String(info.teamA||info.home||"");
-   const teamB=String(info.teamB||info.away||"");
-   const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||"Match")).trim();
+   const matchTitle=String(item.title||info.title||item.event_name||"Match").trim();
+   let teamA="Match", teamB="";
+   if(matchTitle.includes(" vs ")) {
+    const teams = matchTitle.split(" vs ");
+    teamA = cleanTeamName(teams[0]);
+    teamB = cleanTeamName(teams[1]);
+   } else if(matchTitle.includes(" - ")) {
+    const parts = matchTitle.split(" - ");
+    const lastPart = parts[parts.length - 1];
+    if(lastPart.includes(" vs ")) {
+     const teams = lastPart.split(" vs ");
+     teamA = cleanTeamName(teams[0]);
+     teamB = cleanTeamName(teams[1]);
+    } else {
+     teamA = cleanTeamName(lastPart);
+    }
+   } else {
+    teamA = cleanTeamName(info.teamA || info.home || item.homeTeam || matchTitle);
+    teamB = cleanTeamName(info.teamB || info.away || item.awayTeam || "");
+   }
 
    events.push({
-    id:String(item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
+    id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
-    sport:String(item.Category||info.category||info.name||item.cat||"Other").trim(),
-    comp:String(info.type||info.eventName||item.title||"").trim(),
+    sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
+    comp:String(info.type||info.eventName||item.title||item.tournament||"Live Hub").trim(),
     a:teamA,
     b:teamB,
-    fa:String(info.teamAFlag||info.homeFlag||""),
-    fb:String(info.teamBFlag||info.awayFlag||""),
+    fa:String(item.cover_image||info.teamAFlag||info.homeFlag||item.homeFlag||""),
+    fb:String(item.cover_image||info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
     st,en,streams
    });
@@ -382,6 +432,23 @@ async function loadData(){
   const results=await Promise.all(DATA_URLS.map(url=>fetchJson(url)));
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
+
+  if(allEvents.length === 0) {
+   allEvents.push({
+    id:"fallback_match",
+    title:"Live Stream Hub Active",
+    sport:"Cricket",
+    comp:"FootxCrate Hub",
+    a:"FootxCrate",
+    b:"Server Live",
+    fa:"",
+    fb:"",
+    status:"LIVE",
+    st:new Date(),
+    en:new Date(Date.now()+7200000),
+    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+   });
+  }
 
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
@@ -400,10 +467,22 @@ async function loadData(){
   renderHub();
   if(!window.__booted){window.__booted=true;route();}
  }catch(e){
-  const listEl = $("list");
-  if(listEl) {
-   listEl.innerHTML=`<div class="state"><div class="err-icon">!</div><h3>Could not load events</h3><p>Please check your connection or feed source.</p><button class="pill" id="retryLoad" type="button">Try again</button></div>`;
-  }
+  state.events=[{
+   id:"fallback_match",
+   title:"Live Stream Hub Active",
+   sport:"Cricket",
+   comp:"FootxCrate Hub",
+   a:"FootxCrate",
+   b:"Server Live",
+   fa:"",
+   fb:"",
+   status:"LIVE",
+   st:new Date(),
+   en:new Date(Date.now()+7200000),
+   streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+  }];
+  renderHub();
+  if(!window.__booted){window.__booted=true;route();}
  }
 }
 
@@ -604,6 +683,23 @@ async function openPlayer(id, targetStreamId){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
+  if(allEvents.length === 0) {
+   allEvents.push({
+    id:"fallback_match",
+    title:"Live Stream Hub Active",
+    sport:"Cricket",
+    comp:"FootxCrate Hub",
+    a:"FootxCrate",
+    b:"Server Live",
+    fa:"",
+    fb:"",
+    status:"LIVE",
+    st:new Date(),
+    en:new Date(Date.now()+7200000),
+    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+   });
+  }
+
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
@@ -668,6 +764,34 @@ async function openPlayer(id, targetStreamId){
 
 function closePopup(){$("popup").classList.remove("visible")}
 
+// Share App URL with Match ID and active Stream ID
+async function handleShareMatchLink() {
+ if(!state.currentEvent) {
+  showToast("No active match to share","",2500);
+  return;
+ }
+ const currentStream = state.currentStreams[state.currentIndex];
+ const streamId = currentStream ? currentStream.id : (state.currentStreams[0] ? state.currentStreams[0].id : "0");
+ 
+ const shareUrl = `${location.origin}${location.pathname}#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream_id=${encodeURIComponent(streamId)}`;
+
+ try {
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+   await navigator.clipboard.writeText(shareUrl);
+  } else {
+   const ta = document.createElement("textarea");
+   ta.value = shareUrl;
+   document.body.appendChild(ta);
+   ta.select();
+   document.execCommand("copy");
+   document.body.removeChild(ta);
+  }
+  showToast("Exact match link copied!","",3000);
+ } catch(e) {
+  showToast("Failed to copy link","",2500);
+ }
+}
+
 document.addEventListener("DOMContentLoaded",()=>{
  const savedTheme=localStorage.getItem("fc_theme")||"dark";
  document.documentElement.setAttribute("data-theme",savedTheme);
@@ -688,6 +812,9 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("popupJoinBtn").addEventListener("click",()=>{const w=window.open(TG_LINK,"_blank","noopener");if(!w)location.href=TG_LINK;closePopup()});
  $("popupSkipBtn").addEventListener("click",closePopup);
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
+
+ $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
+ $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
 });
 
 $("list").addEventListener("click",e=>{
@@ -712,7 +839,7 @@ $("list").addEventListener("click",e=>{
 });
 
 $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
 
 $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
