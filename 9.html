@@ -191,6 +191,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
   <div class="header-actions">
     <button class="icon-action-btn" id="themeToggle" aria-label="Toggle Theme">☀️</button>
     <div class="live-pill"><span class="dot"></span> Live</div>
+    <div class="clock" id="clock"></div>
     <a class="join-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
       <span>Telegram</span>
@@ -319,27 +320,27 @@ async function fetchJson(url){
 }
 
 function parseEventsFromData(data){
- const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:(Array.isArray(data?.matches)?data.matches:[]));
+ const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:(Array.isArray(data?.matches)?data.matches:Object.values(data||{})));
  if(!list||!Array.isArray(list))return[];
  const events=[];
  list.forEach((item)=>{
   try{
    if(!item)return;
-   const info=item.event||item.eventInfo||{};
-   const st=parseDate(info.startTimeIST||info.startTime||item.startTime);
+   const info=item.event||item.eventInfo||item.matchInfo||item;
+   const st=parseDate(info.startTimeIST||info.startTime||item.startTime||item.time);
    if(!st)return;
    let en=parseDate(info.endTimeIST||info.endTime||item.endTime);
    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
 
    const seen=new Set(),streams=[];
-   const rawStreams=Array.isArray(item.streams)?item.streams:[];
+   const rawStreams=Array.isArray(item.streams)?item.streams:(Array.isArray(info.streams)?info.streams:[]);
    rawStreams.forEach((s,i)=>{
     if(!s)return;
-    const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
+    const link=String(s.stream_url||s.link||s.url||s.src||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
     const t=String(s.type||"").toLowerCase();
     const dash=t==="dash"||/\.mpd(?:\?|$)/i.test(link);
-    const hls=t==="hls"||t==="0"||/\.m3u8(?:\?|$)/i.test(link);
+    const hls=t==="hls"||t==="0"||t==="1"||/\.m3u8(?:\?|$)/i.test(link);
     if(!dash&&!hls)return;
     seen.add(link);
     
@@ -355,19 +356,19 @@ function parseEventsFromData(data){
     });
    });
 
-   const teamA=String(info.teamA||info.home||"");
-   const teamB=String(info.teamB||info.away||"");
-   const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||"Match")).trim();
+   const teamA=String(info.teamA||info.home||item.homeTeam||"");
+   const teamB=String(info.teamB||info.away||item.awayTeam||"");
+   const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||item.name||"Match")).trim();
 
    events.push({
     id:String(item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     title:matchTitle,
-    sport:String(item.Category||info.category||info.name||item.cat||"Other").trim(),
-    comp:String(info.type||info.eventName||item.title||"").trim(),
+    sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Other").trim(),
+    comp:String(info.type||info.eventName||item.title||item.tournament||"").trim(),
     a:teamA,
     b:teamB,
-    fa:String(info.teamAFlag||info.homeFlag||""),
-    fb:String(info.teamBFlag||info.awayFlag||""),
+    fa:String(info.teamAFlag||info.homeFlag||item.homeFlag||""),
+    fb:String(info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
     st,en,streams
    });
@@ -711,7 +712,7 @@ $("list").addEventListener("click",e=>{
 });
 
 $("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
-$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()}});
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
 
 $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
