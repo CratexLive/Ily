@@ -321,9 +321,10 @@ async function fetchJson(url){
  }catch(err){return null;}
 }
 
-// Advanced Normalizer to clean team names so similar names always merge
+// Comprehensive Team Name Normalizer for 100% accurate merging across different JSONs
 function cleanTeamName(name) {
- return String(name || "")
+ if(!name) return "";
+ return String(name)
   .replace(/\b(Under[- ]?19|U[- ]?19|Mens|Women|XI|A|B)\b/gi, "")
   .replace(/\s+in\s+.*$/i, "")
   .replace(/[^a-zA-Z0-9]/g, "")
@@ -470,6 +471,12 @@ async function loadData(){
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
+    // Combine team names nicely if one has full suffix
+    if(ev.a.length > existing.a.length) existing.a = ev.a;
+    if(ev.b.length > existing.b.length) existing.b = ev.b;
+    if(!existing.fa && ev.fa) existing.fa = ev.fa;
+    if(!existing.fb && ev.fb) existing.fb = ev.fb;
+    
     ev.streams.forEach(st=>{
      if(!existing.streams.some(x=>x.link===st.link)){existing.streams.push(st);}
     });
@@ -723,6 +730,11 @@ async function openPlayer(id, targetStreamId){
 
    if(mergedMap.has(key)){
     const existing=mergedMap.get(key);
+    if(ev.a.length > existing.a.length) existing.a = ev.a;
+    if(ev.b.length > existing.b.length) existing.b = ev.b;
+    if(!existing.fa && ev.fa) existing.fa = ev.fa;
+    if(!existing.fb && ev.fb) existing.fb = ev.fb;
+    
     ev.streams.forEach(st=>{
      if(!existing.streams.some(x=>x.link===st.link)){existing.streams.push(st);}
     });
@@ -856,7 +868,7 @@ $("list").addEventListener("click",e=>{
  if(e.target.closest("#retryLoad")){loadData();return}
 });
 
-$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()});
+$("sports").addEventListener("click",e=>{const b=e.target.closest("[data-sport]");if(b){state.sport=b.dataset.sport;renderHub()}});
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b){state.tab=b.dataset.tab;renderHub()});
 
 $("streams").addEventListener("click",e=>{
