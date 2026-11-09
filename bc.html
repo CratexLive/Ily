@@ -60,7 +60,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .card.is-live:before{background:linear-gradient(90deg,transparent,var(--live),transparent);opacity:.95}
 .card.is-live{border-color:rgba(255,51,85,.35);box-shadow:0 12px 35px rgba(255,51,85,.08),0 2px 6px rgba(0,0,0,.04)}
 
-/* FIXED OVERLAPPING ISSUE: Structured card header with flex-wrap and proper spacing */
 .card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .sport-chip{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1 1 180px;min-width:0}
 .sport-chip .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -138,8 +137,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .popup-wrap{width:100%;max-width:410px;padding:3px;background:linear-gradient(145deg,var(--olive),#0088cc,var(--olive));border-radius:26px;box-shadow:0 20px 60px rgba(0,136,204,.35),0 35px 80px rgba(0,0,0,.5);transform:scale(.8) translateY(25px);opacity:0;transition:transform .4s cubic-bezier(.175,.885,.32,1.275),opacity .3s, max-width .35s}
 .popup-overlay.visible .popup-wrap{transform:scale(1);opacity:1}
-
-.popup-box{background:var(--cream);border-radius:23px;padding:42px 30px 24px;text-align:center;border:1px solid rgba(95,104,76,.25);box-shadow:inset 0 2px 6px rgba(255,255,255,.4)}
 
 .popup-overlay.button-stage .popup-wrap{max-width:280px;padding:0;background:transparent;border-radius:16px;box-shadow:none;transform:scale(.78);opacity:0;animation:joinFirstPop .42s cubic-bezier(.18,.9,.25,1.25) forwards}
 .popup-overlay.button-stage .popup-box{padding:0;background:transparent;border:0;border-radius:16px}
@@ -251,7 +248,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v?=""??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     try {
@@ -304,13 +301,20 @@ function parseDate(value){
 
   const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
   const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if(m1){const[,y,mo,d,h,mi,se="00"]=m1;const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);if(!isNaN(dt))return dt;}
+  if(m1){const[,y,mo,d,h,mi,se="00"]=m1;const dt=realDate(y,mo,d,h,mi,se,ist);if(!isNaN(dt))return dt;}
   const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
   if(m2){const[,d,mo,y,h,mi,se]=m2;const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);if(!isNaN(dt))return dt;}
   const dt=new Date(s);return isNaN(dt)?new Date(Date.now() + 3600000):dt;
  } catch(e) {
   return new Date(Date.now() + 3600000);
  }
+}
+
+function realDate(y,mo,d,h,mi,se,ist){
+  if(ist){
+    return new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}+05:30`);
+  }
+  return new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}Z`);
 }
 
 function getStatus(e){const n=Date.now();return n<e.st?"soon":n<=e.en?"live":"done"}
@@ -707,7 +711,7 @@ async function playRecord(record,index){
 
 function renderPlayerStreams(activeStreamId){
  const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';return}
- box.innerHTML=state.currentStreams.map((s)=>{
+ box.innerHTML=state.currentStreams.parseStreamsSafe ? "" : state.currentStreams.map((s)=>{
   const isActive = s.id === activeStreamId;
   const initials = s.title.replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase() || "TV";
   return `<div class="stream-card ${isActive?"active":""}" data-player-stream-id="${esc(s.id)}">
@@ -898,6 +902,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
 
  $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
+ $("shareStreamTextBtn").decodeData = true;
  $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
 });
 
