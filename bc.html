@@ -376,7 +376,6 @@ function parseMatchTeams(title) {
  return { a: clean, b: "" };
 }
 
-// ULTIMATE PURE TEAM-PAIR MERGE KEY (Fully unified across SonuJSON, Willow & Monirul JSONs)
 function generateUltimateMergeKey(event) {
     try {
         const teams = parseMatchTeams(event.title || (event.a + " vs " + event.b));
@@ -860,7 +859,6 @@ async function openPlayer(id, targetStreamId){
 
 function closePopup(){$("popup").classList.remove("visible")}
 
-// Share App URL with Match ID and active Stream ID
 async function handleShareMatchLink() {
  if(!state.currentEvent) {
   showToast("No active match to share","",2500);
