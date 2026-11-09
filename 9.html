@@ -712,14 +712,14 @@ async function openPlayer(id, targetStreamId){
 
 function closePopup(){$("popup").classList.remove("visible")}
 
-// Share App URL with Match and Channel IDs
+// Share App URL with Match ID and active Stream ID
 async function handleShareMatchLink() {
  if(!state.currentEvent) {
   showToast("No active match to share","",2500);
   return;
  }
  const currentStream = state.currentStreams[state.currentIndex];
- const streamId = currentStream ? currentStream.id : "0";
+ const streamId = currentStream ? currentStream.id : (state.currentStreams[0] ? state.currentStreams[0].id : "0");
  
  const shareUrl = `${location.origin}${location.pathname}#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream_id=${encodeURIComponent(streamId)}`;
 
