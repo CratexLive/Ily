@@ -259,7 +259,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v?=""].replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     const hash = location.hash;
@@ -287,49 +287,6 @@ function toggleTheme(){
  document.documentElement.setAttribute("data-theme",next);
  localStorage.setItem("fc_theme",next);
  $("themeToggle").textContent=next==="dark"?"☀️":"🌙";
-}
-
-// Helper to parse BDT time strings into UTC/Date object (BDT is UTC+6)
-function parseBdtTime(timeStr) {
-    if (!timeStr) return new Date(Date.now() + 3600000);
-    const s = String(timeStr).trim();
-    const now = new Date();
-    
-    // Check if format contains "Tomorrow"
-    let targetDate = new Date(now);
-    if (/tomorrow/i.test(s)) {
-        targetDate.setDate(targetDate.getDate() + 1);
-    } else {
-        // Look for Day, Mon DD format like "Thu, Nov 12" or "Sat, Nov 14"
-        const dayMatch = s.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})/i);
-        if (dayMatch) {
-            const [, monStr, dayStr] = dayMatch;
-            const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
-            const mIdx = months[monStr.toLowerCase().slice(0,3)];
-            if (mIdx !== undefined) {
-                targetDate.setMonth(mIdx);
-                targetDate.setDate(parseInt(dayStr, 10));
-            }
-        }
-    }
-
-    // Extract time (e.g. "10 AM", "10:30 AM", "7:45 PM")
-    const timeMatch = s.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
-    if (timeMatch) {
-        let [, hStr, mStr = "00", ampm] = timeMatch;
-        let h = parseInt(hStr, 10);
-        const m = parseInt(mStr, 10);
-        if (/pm/i.test(ampm) && h < 12) h += 12;
-        if (/am/i.test(ampm) && h === 12) h = 0;
-        
-        targetDate.setHours(h, m, 0, 0);
-        // BDT is UTC+6. App standard works with IST (UTC+5:30) or local time. 
-        // Subtract 5.5 hours from BDT to get UTC, then let standard date parsing handle it.
-        const bdtMillis = targetDate.getTime();
-        const istMillis = bdtMillis - (30 * 60 * 1000); // BDT (+6:00) to IST (+5:30) difference is -30 mins
-        return new Date(istMillis);
-    }
-    return new Date(Date.now() + 3600000);
 }
 
 function parseDate(value){
@@ -403,7 +360,7 @@ function parseEventsFromData(data){
    const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||item.name||"Match")).trim();
 
    events.push({
-    id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
+    id:String(item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
     match_id:String(item.match_id||""),
     title:matchTitle,
     sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
@@ -422,7 +379,6 @@ function parseEventsFromData(data){
 
 async function loadData(){
  try{
-  // Fetch main event lists and Willow JSON concurrently
   const [results, willowData] = await Promise.all([
     Promise.all(DATA_URLS.map(url=>fetchJson(url))),
     fetchJson(WILLOW_JSON_URL)
@@ -431,35 +387,17 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
-  // Merge Willow JSON data into existing matches
+  // Merge Willow JSON data (Mod keys and alpha/bravo servers only)
   if (willowData && Array.isArray(willowData.Matches)) {
     willowData.Matches.forEach(wm => {
-      // Find matching event by match_id or title similarity
-      let targetEvent = allEvents.find(e => e.match_id === wm.match_id || (wm.match_id && e.id === wm.match_id));
-      
-      if (!targetEvent) {
-        // Fallback: match by title text similarity
-        const wmTitle = String(wm.title || "").toLowerCase();
-        targetEvent = allEvents.find(e => {
-          const eTitle = String(e.title || "").toLowerCase();
-          return eTitle.includes(wmTitle) || wmTitle.includes(eTitle);
-        });
-      }
+      let targetEvent = allEvents.find(e => {
+        if (wm.match_id && (e.match_id === wm.match_id || e.id === wm.match_id)) return true;
+        const cleanE = String(e.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const cleanWm = String(wm.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        return cleanE.includes(cleanWm) || cleanWm.includes(cleanE);
+      });
 
       if (targetEvent) {
-        // Update cover image if available
-        if (wm.cover_image) {
-          targetEvent.fa = wm.cover_image; // Use cover image as teamA flag/poster or keep custom
-        }
-        if (wm.status) {
-          targetEvent.status = wm.status;
-        }
-        if (wm.time) {
-          targetEvent.st = parseBdtTime(wm.time);
-          targetEvent.en = new Date(targetEvent.st.getTime() + 3 * 3600000);
-        }
-
-        // Helper to add servers from alpha/bravo
         const addServersObj = (obj, prefix) => {
           if (!obj || typeof obj !== 'object') return;
           Object.entries(obj).forEach(([serverName, streamUrl]) => {
@@ -468,7 +406,6 @@ async function loadData(){
             if (!/^https?:\/\//i.test(cleanUrl)) return;
 
             const streamId = `${prefix}_${serverName.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
-            // Avoid duplicate stream links
             if (!targetEvent.streams.some(s => s.link === cleanUrl)) {
               targetEvent.streams.push({
                 id: streamId,
@@ -485,7 +422,6 @@ async function loadData(){
         addServersObj(wm.stream_url_alpha, 'alpha');
         addServersObj(wm.stream_url_bravo, 'bravo');
 
-        // If drm_key is present, update all streams that lack a key
         if (wm.drm_key) {
           targetEvent.streams.forEach(s => {
             if (!s.key) s.key = wm.drm_key;
@@ -750,21 +686,13 @@ async function openPlayer(id, targetStreamId){
 
   if (willowData && Array.isArray(willowData.Matches)) {
     willowData.Matches.forEach(wm => {
-      let targetEvent = allEvents.find(e => e.match_id === wm.match_id || (wm.match_id && e.id === wm.match_id));
-      if (!targetEvent) {
-        const wmTitle = String(wm.title || "").toLowerCase();
-        targetEvent = allEvents.find(e => {
-          const eTitle = String(e.title || "").toLowerCase();
-          return eTitle.includes(wmTitle) || wmTitle.includes(eTitle);
-        });
-      }
+      let targetEvent = allEvents.find(e => {
+        if (wm.match_id && (e.match_id === wm.match_id || e.id === wm.match_id)) return true;
+        const cleanE = String(e.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const cleanWm = String(wm.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        return cleanE.includes(cleanWm) || cleanWm.includes(cleanE);
+      });
       if (targetEvent) {
-        if (wm.cover_image) targetEvent.fa = wm.cover_image;
-        if (wm.status) targetEvent.status = wm.status;
-        if (wm.time) {
-          targetEvent.st = parseBdtTime(wm.time);
-          targetEvent.en = new Date(targetEvent.st.getTime() + 3 * 3600000);
-        }
         const addServersObj = (obj, prefix) => {
           if (!obj || typeof obj !== 'object') return;
           Object.entries(obj).forEach(([serverName, streamUrl]) => {
