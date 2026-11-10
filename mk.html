@@ -259,7 +259,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v?=""].replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function isAdmin() {
     const hash = location.hash;
@@ -387,7 +387,7 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
-  // Merge Willow JSON data (Mod keys and alpha/bravo servers only)
+  // Merge Willow JSON servers & mod keys only (No thumbnail/cover image)
   if (willowData && Array.isArray(willowData.Matches)) {
     willowData.Matches.forEach(wm => {
       let targetEvent = allEvents.find(e => {
