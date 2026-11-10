@@ -42,7 +42,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .join-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,136,204,.5);filter:brightness(1.05)}
 .join-btn svg{width:14px;height:14px;transition:transform .3s ease}.join-btn:hover svg{transform:scale(1.15) rotate(-8deg)}
 
-/* Mode Switcher Slider replacing Search Bar */
+/* Mode Switcher Slider */
 .mode-switcher{display:flex;gap:10px;margin-bottom:22px;background:var(--surface2);padding:4px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
 .mode-btn{flex:1;padding:12px;border-radius:10px;font:700 13.5px var(--display);color:var(--muted);text-align:center;cursor:pointer;transition:all .25s ease;background:transparent;border:0}
 .mode-btn.active{background:var(--olive);color:var(--cream);box-shadow:0 4px 15px rgba(95,104,76,.35)}
@@ -53,8 +53,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pill.active{color:var(--cream);background:var(--olive);border-color:var(--olive);box-shadow:0 6px 18px rgba(95,104,76,.3);transform:translateY(-1px)}
 .pill .count{font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface3);color:var(--muted)}
 .pill.active .count{background:rgba(255,255,255,.25);color:var(--cream)}
-.pill[data-tab=live].active{color:var(--live);background:rgba(255,51,85,.15);border-color:var(--live)}
-.pill[data-tab=live].active .count{background:rgba(255,51,85,.25);color:var(--live)}
 
 /* Match Grid 1 column */
 .grid{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:48px}
@@ -250,7 +248,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
   <div class="player-match-showcase" id="playerMatchShowcase">
     <div class="pm-team">
       <div class="crest" id="pmCrestA">?</div>
-      <div class="pm-name" id="pmNameA">Team A</div>
+      <div class="pm-name" id="pmNameA">Channel A</div>
     </div>
     <div class="pm-center-box">
       <div class="pm-top-actions">
@@ -259,16 +257,16 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
         </button>
         <button class="pm-join-action-btn" id="shareStreamTextBtn" type="button">Share</button>
       </div>
-      <div class="pm-vs">vs</div>
+      <div class="pm-vs">LIVE</div>
     </div>
     <div class="pm-team">
-      <div class="crest" id="pmCrestB">?</div>
-      <div class="pm-name" id="pmNameB">Team B</div>
+      <div class="crest" id="pmCrestB" style="display:none">?</div>
+      <div class="pm-name" id="pmNameB" style="display:none"></div>
     </div>
   </div>
 
   <!-- Channel Grid (4 columns) -->
-  <h3 class="section-title">Live Channels</h3>
+  <h3 class="section-title">Channel Servers</h3>
   <div class="streams" id="streams"></div>
 </section>
 </div>
@@ -284,7 +282,7 @@ const WILLOW_JSON_URL = "https://raw.githubusercontent.com/srhady/willow-event/r
 const CHANNELS_JSON_URL = "https://sportlink-tv11.pages.dev/Data.json";
 const TG_LINK="https://t.me/+_Rw99hQyOxplYmJl";
 const $=id=>document.getElementById(id);
-const state={events:[],channels:[],currentMode:"matches",sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
+const state={events:[],channels:[],currentMode:"matches",sport:"All",tab:"all",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -470,12 +468,15 @@ async function loadData(){
     });
   }
 
+  // Parse SportLink TV Channels JSON correctly
   if (channelsData && Array.isArray(channelsData.channels)) {
     state.channels = channelsData.channels.map(ch => {
       const streams = [];
+      
+      // If base stream_url exists
       if (ch.stream_url) {
         streams.push({
-          id: "primary",
+          id: "primary_server",
           title: "Primary Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
@@ -483,13 +484,15 @@ async function loadData(){
           kid: ch.key_id || ""
         });
       }
+
+      // If sportlink array exists (key pairs)
       if (Array.isArray(ch.sportlink)) {
         ch.sportlink.forEach((sl, idx) => {
           const parts = sl.split(":");
           if (parts.length >= 2) {
             streams.push({
               id: `sportlink_${idx}`,
-              title: `SportLink Server ${idx + 1}`,
+              title: `SportLink ${idx + 1}`,
               link: ch.stream_url || "https://jiotvpllive.cdn.jio.com/bpk-tv/SonySportsTen1HDSTB_BTS/WDVLive/index.mpd",
               type: "android",
               key: parts[1],
@@ -498,6 +501,7 @@ async function loadData(){
           }
         });
       }
+
       return {
         id: `channel_${ch.id}`,
         title: ch.name,
@@ -582,7 +586,7 @@ function renderHub(){
       <img class="channel-logo" src="${esc(ch.fa)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">
       <div class="channel-info">
         <div class="channel-name">${esc(ch.title)}</div>
-        <div class="channel-status"><span class="dot"></span> Live • ${ch.streams.length} Server${ch.streams.length>1?'s':''}</div>
+        <div class="channel-status"><span class="dot"></span> Live • ${ch.streams.length} Stream source${ch.streams.length>1?'s':''}</div>
       </div>
     </div>
   `).join("");
@@ -735,7 +739,7 @@ async function playRecord(record,index){
 }
 
 function renderPlayerStreams(activeStreamId){
- const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';return}
+ const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this channel.</p></div>';return}
  box.innerHTML=state.currentStreams.map((s)=>{
   const isActive = s.id === activeStreamId;
   const initials = s.title.replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase() || "TV";
@@ -793,7 +797,7 @@ async function openPlayer(id, targetStreamId){
       const streams = [];
       if (ch.stream_url) {
         streams.push({
-          id: "primary",
+          id: "primary_server",
           title: "Primary Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
@@ -807,7 +811,7 @@ async function openPlayer(id, targetStreamId){
           if (parts.length >= 2) {
             streams.push({
               id: `sportlink_${idx}`,
-              title: `SportLink Server ${idx + 1}`,
+              title: `SportLink ${idx + 1}`,
               link: ch.stream_url || "https://jiotvpllive.cdn.jio.com/bpk-tv/SonySportsTen1HDSTB_BTS/WDVLive/index.mpd",
               type: "android",
               key: parts[1],
@@ -841,10 +845,10 @@ async function openPlayer(id, targetStreamId){
  if(!ev){
   state.currentEvent=null;
   state.currentStreams=[];
-  $("pmNameA").textContent="Event not found";
+  $("pmNameA").textContent="Channel not found";
   $("pmNameB").textContent="";
   $("streams").innerHTML="";
-  showPlayerError("This event or channel is no longer available.");
+  showPlayerError("This channel is no longer available.");
   return;
  }
 
@@ -888,7 +892,7 @@ function closePopup(){$("popup").classList.remove("visible")}
 
 async function handleShareMatchLink() {
  if(!state.currentEvent) {
-  showToast("No active match to share","",2500);
+  showToast("No active channel to share","",2500);
   return;
  }
  const currentStream = state.currentStreams[state.currentIndex];
@@ -907,7 +911,7 @@ async function handleShareMatchLink() {
    document.execCommand("copy");
    document.body.removeChild(ta);
   }
-  showToast("Exact match link copied!","",3000);
+  showToast("Exact channel link copied!","",3000);
  } catch(e) {
   showToast("Failed to copy link","",2500);
  }
