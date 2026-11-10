@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111214">
 <meta name="referrer" content="no-referrer">
-<title>FootxCrate — Live Sports Streaming Hub</title>
+<title> —CʀɪᴄxCʀᴀᴛᴇ Lɪᴠᴇ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Acme&family=Amaranth:wght@400;700&display=swap" rel="stylesheet">
@@ -22,12 +22,25 @@ body:before{content:"";position:fixed;top:-50%;left:-50%;width:200%;height:200%;
 button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none;will-change:transform;transition:transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.18s ease}button:active{transform:scale(0.93)!important}a{color:var(--accent);text-decoration:none}img{display:block;max-width:100%}[hidden]{display:none!important}:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .container{max-width:1320px;margin:auto;padding:0 20px;position:relative;z-index:1}.view{display:none}.view.active{display:block;animation:fade .28s cubic-bezier(0.16, 1, 0.3, 1)}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-.header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 0 22px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:14px}.brand-mark{width:46px;height:46px;border-radius:12px;background:var(--olive);color:var(--cream);display:grid;place-items:center;font-size:20px;font-weight:700;box-shadow:0 8px 24px rgba(95,104,76,.35)}.brand-text h1{font:700 23px/1.1 var(--display);letter-spacing:-0.3px}.brand-text p{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:500}.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.live-pill{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.28);color:var(--live);font-size:12.5px;font-weight:600}.live-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.3s infinite}@keyframes pulse{50%{opacity:.3}}.clock{font-size:12.5px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+/* Single Line Header Styling */
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:22px;background:var(--white);margin-left:-20px;margin-right:-20px;box-shadow:var(--shadow);flex-wrap:nowrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:0 6px 20px rgba(0,136,204,.3);flex:none}
+.brand-text{min-width:0}
+.brand-text h1{font:700 19px/1.1 var(--display);letter-spacing:-0.3px;background:linear-gradient(135deg,var(--ink),var(--olive));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-text p{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.icon-action-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--white);display:grid;place-items:center;font-size:16px;box-shadow:var(--shadow);cursor:pointer;transition:all .22s cubic-bezier(0.175,0.885,0.32,1.275)}.icon-action-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-deep)}
-.join-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:12px;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;font-size:13px;font-weight:700;transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 6px 20px rgba(0,136,204,.35);position:relative;overflow:hidden}
-.join-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,136,204,.5);filter:brightness(1.05)}
-.join-btn svg{width:16px;height:16px;transition:transform .3s ease}.join-btn:hover svg{transform:scale(1.15) rotate(-8deg)}
+.header-actions{display:flex;align-items:center;gap:8px;flex:none}
+.live-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.28);color:var(--live);font-size:12px;font-weight:600;white-space:nowrap}
+.live-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.3s infinite}@keyframes pulse{50%{opacity:.3}}
+.clock{font-size:12px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums;display:none}
+
+.icon-action-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);display:grid;place-items:center;font-size:15px;box-shadow:var(--shadow);cursor:pointer;flex:none;transition:all .22s cubic-bezier(0.175,0.885,0.32,1.275)}
+.icon-action-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-deep)}
+
+.join-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;font-size:12px;font-weight:700;transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 6px 18px rgba(0,136,204,.35);white-space:nowrap;flex:none}
+.join-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,136,204,.5);filter:brightness(1.05)}
+.join-btn svg{width:14px;height:14px;transition:transform .3s ease}.join-btn:hover svg{transform:scale(1.15) rotate(-8deg)}
 
 .search-container{margin-bottom:22px;position:relative}.search-input{width:100%;padding:14px 18px 14px 46px;background:var(--white);color:var(--ink);border:1px solid var(--border);border-radius:12px;font-size:14.5px;font-weight:500;box-shadow:var(--shadow);transition:all .25s}.search-input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(0,136,204,.18), var(--shadow-deep)}.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);pointer-events:none}
 
@@ -40,7 +53,8 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pill[data-tab=live].active{color:var(--live);background:rgba(255,51,85,.15);border-color:var(--live)}
 .pill[data-tab=live].active .count{background:rgba(255,51,85,.25);color:var(--live)}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px;padding-bottom:48px}
+/* Match Grid 1 column */
+.grid{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:48px}
 
 .card{display:flex;flex-direction:column;gap:14px;padding:20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);text-align:left;font:inherit;color:inherit;transition:all .3s cubic-bezier(0.16, 1, 0.3, 1);position:relative;overflow:hidden;box-shadow:var(--shadow);width:100%}
 .card:before{content:"";position:absolute;top:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,transparent,var(--olive),transparent);opacity:0;transition:opacity .25s}
@@ -56,7 +70,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .card-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 0}
 .team-column{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center}
 .team-row{display:flex;align-items:center;gap:4px;justify-content:center;max-width:100%}
-.team-name{font-size:13.5px;font-weight:600;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-name{font-size:13.5px;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
 .fav-team-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px;padding:2px;transition:transform .2s cubic-bezier(0.175,0.885,0.32,1.275), color .2s;flex:none;z-index:2}
 .fav-team-btn:hover{transform:scale(1.35)}.fav-team-btn.active{color:var(--live)}
 
@@ -67,6 +81,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .versus{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0 4px}
 .kickoff-time{font:700 18px/1 var(--display);color:var(--olive);font-variant-numeric:tabular-nums;white-space:nowrap}
 .kickoff-date{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+
 .card-foot{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border);font-size:12px}
 .stream-count{color:var(--muted);font-weight:500}.stream-count.empty{color:var(--live)}
 .watch-cta{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:700;font-size:12.5px;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);cursor:pointer;background:none;border:0}
@@ -74,23 +89,49 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
 
-.player-top{display:flex;align-items:center;gap:14px;padding:24px 0 16px;flex-wrap:wrap}.icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--white);display:grid;place-items:center;font-size:18px;box-shadow:var(--shadow);flex:none;cursor:pointer;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275)}.icon-btn:hover{border-color:var(--olive);color:var(--olive);background:var(--surface2);transform:translateY(-2px)}.player-meta{flex:1;min-width:0}.player-title{font:700 clamp(18px,3vw,24px)/1.15 var(--display);overflow-wrap:anywhere}.player-sub{color:var(--muted);font-size:13px;margin-top:3px;font-weight:500}
+/* Player Top Header Styling */
+.player-top-header{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;position:relative;max-width:980px;margin:0 auto}
+.player-brand-badge{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
+.player-brand-badge .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,136,204,.3)}
+.player-brand-badge h3{font:700 17px var(--display);letter-spacing:-0.3px;background:linear-gradient(135deg,var(--ink),var(--olive));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+.player-get-app-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;font-size:12px;font-weight:700;box-shadow:0 4px 14px rgba(0,136,204,.35);transition:all .25s ease}
+.player-get-app-btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.player-get-app-btn svg{width:14px;height:14px;fill:currentColor}
+
 .screen{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:16/9;width:100%;max-width:min(980px,calc((100vh - 220px)*16/9));margin:0 auto;border:1px solid var(--border);box-shadow:0 25px 60px rgba(0,0,0,.25)}
 #player-container{position:absolute;inset:0;background:#000;overflow:hidden}
 #player-container video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
 .quality-toast{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.88);color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .quality-toast.show{opacity:1}
-.player-sub-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:14px auto 26px;flex-wrap:wrap;padding:0 2px}.player-brand-info{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}.player-brand-info span{color:var(--olive)}.player-actions-group{display:flex;align-items:center;gap:8px}
-.player-tg-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:700;background:linear-gradient(135deg,#0088cc,#00aaff);color:#fff;box-shadow:0 6px 18px rgba(0,136,204,.35);transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275)}
-.player-tg-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}.player-tg-btn svg{width:14px;height:14px;fill:currentColor}
-.player-share-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:12.5px;font-weight:700;transition:all .2s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--white);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow)}
-.player-share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-deep)}
-.section-title{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);max-width:980px;margin:30px auto 12px}.streams{display:flex;flex-direction:column;gap:8px;max-width:980px;margin:0 auto}
-.stream-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:15px 18px;border-radius:12px;text-align:left;border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);transition:all .22s cubic-bezier(0.175,0.885,0.32,1.275)}
-.stream-btn:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--shadow-deep)}.stream-btn.active{border-color:var(--olive);background:var(--surface2);box-shadow:0 0 0 2px var(--olive) inset, var(--shadow)}
-.stream-btn .title{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stream-btn .tags{display:flex;align-items:center;gap:8px;flex:none}
-.type-badge{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--surface3);color:#555;text-transform:uppercase}
-.type-badge.android{color:#0088cc;background:rgba(0,136,204,.12)}.type-badge.ios{color:#D48806;background:rgba(212,136,6,.12)}
+
+/* Team vs Team match header inside player view */
+.player-match-showcase{display:flex;align-items:center;justify-content:center;gap:24px;padding:16px 0 8px;max-width:980px;margin:0 auto;position:relative}
+.pm-team{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;text-align:center}
+.pm-team .crest{width:52px;height:52px}
+.pm-name{font:700 14px var(--display);color:var(--ink);overflow-wrap:anywhere}
+.pm-center-box{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pm-vs{font:700 13px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+/* Small compact top bar for Share icon and Share button above vs */
+.pm-top-actions{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:20px;box-shadow:var(--shadow)}
+.pm-tg-icon-btn{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--olive),var(--accent));color:#fff;display:grid;place-items:center;font-size:11px;transition:transform .2s;cursor:pointer}
+.pm-tg-icon-btn:hover{transform:scale(1.1)}
+.pm-tg-icon-btn svg{width:12px;height:12px;fill:currentColor}
+.pm-join-action-btn{font-size:11px;font-weight:700;color:var(--ink);background:none;border:0;cursor:pointer;padding:2px 4px;transition:opacity .2s}
+.pm-join-action-btn:hover{opacity:0.8}
+
+.section-title{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);max-width:980px;margin:20px auto 10px}
+
+/* Channel / Stream Card Grid (4 columns) */
+.streams{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:980px;margin:0 auto}
+.stream-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 10px;background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);text-align:center;cursor:pointer;transition:all .25s cubic-bezier(0.175,0.885,0.32,1.275);position:relative}
+.stream-card:hover{border-color:var(--olive);background:var(--surface2);transform:translateY(-3px);box-shadow:var(--shadow-deep)}
+.stream-card.active{border-color:var(--accent);background:var(--surface2);box-shadow:0 0 0 2px var(--accent) inset, var(--shadow)}
+.stream-card .s-crest{width:38px;height:38px;border-radius:50%;background:var(--surface3);color:var(--muted);display:grid;place-items:center;font-weight:700;font-size:12px;box-shadow:0 3px 10px rgba(0,0,0,.06)}
+.stream-card .s-title{font-weight:700;font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.stream-card .s-type{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
 .state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;text-align:center}.state h3{font:600 18px var(--display)}.state p{color:var(--muted);font-size:13.5px;max-width:440px}.err-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,51,85,.12);color:var(--live);display:grid;place-items:center;font-size:20px;box-shadow:0 6px 18px rgba(255,51,85,.2)}
 .screen-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;background:#080808;color:#fff;font:600 15px var(--body);z-index:5}.screen-msg small{font-weight:400;color:#aaa;max-width:90%;overflow-wrap:anywhere}
 
@@ -125,27 +166,36 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .btn-joined-main:hover{opacity:1}
 
 @keyframes btnPop{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
-@media(max-width:600px){.container{padding:0 14px}.header{padding-top:16px}.header-actions{gap:8px}.clock{display:none}.grid{grid-template-columns:1fr;gap:12px}.card{padding:15px}.screen{max-width:100%;border-radius:10px}.player-sub-bar{align-items:flex-start}.player-brand-info{font-size:12px}.player-tg-btn,.player-share-btn{padding:8px 10px}.popup-box{padding:34px 22px 20px}}
+@media(max-width:768px){.streams{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+@media(max-width:600px){.container{padding:0 14px}.header{padding:12px 14px;margin-left:-14px;margin-right:-14px}.brand-text h1{font-size:16px}.brand-text p{font-size:9.5px}.brand-mark{width:36px;height:36px;font-size:15px}.live-pill{padding:5px 8px;font-size:11px}.icon-action-btn{width:34px;height:34px;font-size:13px}.join-btn{padding:6px 10px;font-size:11px}.screen{max-width:100%;border-radius:10px}}
 </style>
 </head>
 <body>
 <div class="popup-overlay" id="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
   <div class="popup-wrap"><div class="popup-box">
     <div class="popup-title" id="popupTitle">Follow Us !!</div>
-    <div class="popup-text">Join our Telegram channel<br><b>FootxCrate ™</b>For Instant Updates &amp; Exclusive Links.</div>
+    <div class="popup-text">Join our Telegram channel<br><b>CʀɪᴄxCʀᴀᴛᴇ ™</b>For Instant Updates &amp; Exclusive Links.</div>
     <button class="popup-join" id="popupJoinBtn" type="button">JOIN NOW</button>
     <button class="btn-popup btn-joined-main" id="popupSkipBtn" type="button">No, Thanks</button>
   </div></div>
 </div>
 
 <div class="container">
-<section id="hubView" class="view active">
+<!-- Initial view dynamically determined based on URL hash -->
+<section id="hubView" class="view">
 <header class="header">
-  <div class="brand"><div class="brand-mark">FC</div><div class="brand-text"><h1>FootxCrate</h1><p>Live sports streaming hub</p></div></div>
+  <div class="brand">
+    <div class="brand-mark">Cᴄ</div>
+    <div class="brand-text"><h1>CʀɪᴄxCʀᴀᴛᴇ</h1><p>Live sports streaming hub</p></div>
+  </div>
   <div class="header-actions">
     <button class="icon-action-btn" id="themeToggle" aria-label="Toggle Theme">☀️</button>
-    <div class="live-pill"><span class="dot"></span> Live</div><div class="clock" id="clock"></div>
-    <a class="join-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span>Join Channel</span></a>
+    <div class="live-pill"><span class="dot"></span> Live</div>
+    <div class="clock" id="clock"></div>
+    <a class="join-btn" href="https://t.me/+_Rw99hQyOxplYmJl" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+      <span>Telegram</span>
+    </a>
   </div>
 </header>
 <div class="search-container"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="searchInput" class="search-input" type="search" placeholder="Search matches, teams or sports..." autocomplete="off"></div>
@@ -154,13 +204,45 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 </section>
 
 <section id="playerView" class="view">
-<header class="player-top"><button class="icon-btn" id="backHub" aria-label="Back to matches">←</button><div class="player-meta"><h2 class="player-title" id="playerTitle">FootxCrate Player</h2><p class="player-sub" id="playerSub"></p></div></header>
-<div class="screen"><div id="player-container"></div></div>
-<div class="player-sub-bar"><div class="player-brand-info"><span>FootxCrate</span> — Live Stream Player</div><div class="player-actions-group">
-<a class="player-tg-btn" href="https://t.me/+lVY6VyOPZmtjOWM1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span>Join Telegram</span></a>
-<button class="player-share-btn" id="shareBtn" type="button"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg><span>Share</span></button>
-</div></div>
-<h3 class="section-title">Available Streams</h3><div class="streams" id="streams"></div>
+  <!-- Top Bar with Left Premium Branding and Right Get App Button -->
+  <div class="player-top-header">
+    <div class="player-brand-badge">
+      <div class="brand-mark">FC</div>
+      <h3>CʀɪᴄxCʀᴀᴛᴇ</h3>
+    </div>
+    <a class="player-get-app-btn" href="https://t.me/+_Rw99hQyOxplYmJl" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+      <span>Get App</span>
+    </a>
+  </div>
+
+  <!-- Video Player -->
+  <div class="screen"><div id="player-container"><div class="screen-msg">Loading stream…</div></div></div>
+
+  <!-- Team vs Team Logos & Names with Share Action Bar Above VS -->
+  <div class="player-match-showcase" id="playerMatchShowcase">
+    <div class="pm-team">
+      <div class="crest" id="pmCrestA">?</div>
+      <div class="pm-name" id="pmNameA">Team A</div>
+    </div>
+    <div class="pm-center-box">
+      <div class="pm-top-actions">
+        <button class="pm-tg-icon-btn" id="shareStreamIconBtn" type="button" title="Share Stream">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
+        <button class="pm-join-action-btn" id="shareStreamTextBtn" type="button">Share</button>
+      </div>
+      <div class="pm-vs">vs</div>
+    </div>
+    <div class="pm-team">
+      <div class="crest" id="pmCrestB">?</div>
+      <div class="pm-name" id="pmNameB">Team B</div>
+    </div>
+  </div>
+
+  <!-- Channel Grid (4 columns) -->
+  <h3 class="section-title">Live Channels</h3>
+  <div class="streams" id="streams"></div>
 </section>
 </div>
 
@@ -171,7 +253,8 @@ const DATA_URLS = [
   "https://sonujson-v6.pages.dev/Data/events/allinone.json",
   "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json"
 ];
-const TG_LINK="https://t.me/+lVY6VyOPZmtjOWM1";
+const WILLOW_JSON_URL = "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json";
+const TG_LINK="https://t.me/+_Rw99hQyOxplYmJl";
 const $=id=>document.getElementById(id);
 const state={events:[],sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
@@ -188,8 +271,14 @@ function isAdmin() {
     return localStorage.getItem("fc_admin_auth") === "true";
 }
 
-if (!isAdmin() && !location.hash.includes("watch?id=")) {
+const initialHash = location.hash;
+if (initialHash.includes("watch?id=")) {
+    $("playerView").classList.add("active");
+    $("hubView").classList.remove("active");
+} else if (!isAdmin()) {
     window.location.replace(TG_LINK);
+} else {
+    $("hubView").classList.add("active");
 }
 
 function toggleTheme(){
@@ -200,14 +289,58 @@ function toggleTheme(){
  $("themeToggle").textContent=next==="dark"?"☀️":"🌙";
 }
 
+// Helper to parse BDT time strings into UTC/Date object (BDT is UTC+6)
+function parseBdtTime(timeStr) {
+    if (!timeStr) return new Date(Date.now() + 3600000);
+    const s = String(timeStr).trim();
+    const now = new Date();
+    
+    // Check if format contains "Tomorrow"
+    let targetDate = new Date(now);
+    if (/tomorrow/i.test(s)) {
+        targetDate.setDate(targetDate.getDate() + 1);
+    } else {
+        // Look for Day, Mon DD format like "Thu, Nov 12" or "Sat, Nov 14"
+        const dayMatch = s.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})/i);
+        if (dayMatch) {
+            const [, monStr, dayStr] = dayMatch;
+            const months = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
+            const mIdx = months[monStr.toLowerCase().slice(0,3)];
+            if (mIdx !== undefined) {
+                targetDate.setMonth(mIdx);
+                targetDate.setDate(parseInt(dayStr, 10));
+            }
+        }
+    }
+
+    // Extract time (e.g. "10 AM", "10:30 AM", "7:45 PM")
+    const timeMatch = s.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+    if (timeMatch) {
+        let [, hStr, mStr = "00", ampm] = timeMatch;
+        let h = parseInt(hStr, 10);
+        const m = parseInt(mStr, 10);
+        if (/pm/i.test(ampm) && h < 12) h += 12;
+        if (/am/i.test(ampm) && h === 12) h = 0;
+        
+        targetDate.setHours(h, m, 0, 0);
+        // BDT is UTC+6. App standard works with IST (UTC+5:30) or local time. 
+        // Subtract 5.5 hours from BDT to get UTC, then let standard date parsing handle it.
+        const bdtMillis = targetDate.getTime();
+        const istMillis = bdtMillis - (30 * 60 * 1000); // BDT (+6:00) to IST (+5:30) difference is -30 mins
+        return new Date(istMillis);
+    }
+    return new Date(Date.now() + 3600000);
+}
+
 function parseDate(value){
- if(!value)return null;let s=String(value).trim();if(!s||s==="null"||s==="undefined")return null;
+ if(!value)return new Date(Date.now() + 3600000);
+ let s=String(value).trim();if(!s||s==="null"||s==="undefined")return new Date(Date.now() + 3600000);
  const ist=/\bIST\b/i.test(s);if(ist)s=s.replace(/\s*IST\s*$/i,"").trim();
  const m1=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
  if(m1){const[,y,mo,d,h,mi,se="00"]=m1;const dt=new Date(`${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}T${h.padStart(2,"0")}:${mi}:${se}${ist?"+05:30":"Z"}`);if(!isNaN(dt))return dt;}
  const m2=s.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
  if(m2){const[,d,mo,y,h,mi,se]=m2;const dt=new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}Z`);if(!isNaN(dt))return dt;}
- const dt=new Date(s);return isNaN(dt)?null:dt;
+ const dt=new Date(s);return isNaN(dt)?new Date(Date.now() + 3600000):dt;
 }
 
 function getStatus(e){const n=Date.now();return n<e.st?"soon":n<=e.en?"live":"done"}
@@ -216,7 +349,7 @@ const timeString=d=>d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
 const dateString=d=>d.toLocaleDateString([],{day:"numeric",month:"short"});
 
 function crest(url,name){
- const initials=String(name||"").replace(/[^A-Za-z0-9 ]/g,"").split(/\s+/).filter(Boolean).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"?";
+ const initials=String(name||"").replace(/[^A-Za-z0-9 ]/g,"").split(/\s+/).filter(Boolean).map(x=>x[0]).join("").slice(0,2).toUpperCase()||"?";
  if(!url||url==="null")return `<div class="crest">${esc(initials)}</div>`;
  return `<div class="crest"><span>${esc(initials)}</span><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></div>`;
 }
@@ -232,32 +365,29 @@ async function fetchJson(url){
 }
 
 function parseEventsFromData(data){
- const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:(Array.isArray(data?.matches)?data.matches:[]));
+ const list=Array.isArray(data)?data:(Array.isArray(data?.events)?data.events:(Array.isArray(data?.matches)?data.matches:Object.values(data||{})));
  if(!list||!Array.isArray(list))return[];
  const events=[];
  list.forEach((item)=>{
   try{
    if(!item)return;
-   const info=item.event||item.eventInfo||{};
-   const st=parseDate(info.startTimeIST||info.startTime||item.startTime);
-   if(!st)return;
+   const info=item.event||item.eventInfo||item.matchInfo||item;
+   const st=parseDate(info.startTimeIST||info.startTime||item.startTime||item.time);
    let en=parseDate(info.endTimeIST||info.endTime||item.endTime);
    if(!en||en<=st)en=new Date(st.getTime()+3*3600000);
 
    const seen=new Set(),streams=[];
-   const rawStreams=Array.isArray(item.streams)?item.streams:[];
+   const rawStreams=Array.isArray(item.streams)?item.streams:(Array.isArray(info.streams)?info.streams:[]);
    rawStreams.forEach((s,i)=>{
     if(!s)return;
-    const link=String(s.stream_url||s.link||s.url||"").split("|")[0].trim();
+    const link=String(s.stream_url||s.link||s.url||s.src||"").split("|")[0].trim();
     if(!/^https?:\/\//i.test(link)||seen.has(link))return;
     const t=String(s.type||"").toLowerCase();
     const dash=t==="dash"||/\.mpd(?:\?|$)/i.test(link);
-    const hls=t==="hls"||t==="0"||/\.m3u8(?:\?|$)/i.test(link);
-    if(!dash&&!hls)return;
     seen.add(link);
-    
+
     const channelName=String(s.channel_name||s.title||s.name||`Stream ${i+1}`).trim();
-    
+
     streams.push({
      id:channelName.toLowerCase().replace(/[^a-z0-9]/g,"_"),
      title:channelName,
@@ -268,19 +398,20 @@ function parseEventsFromData(data){
     });
    });
 
-   const teamA=String(info.teamA||info.home||"");
-   const teamB=String(info.teamB||info.away||"");
-   const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||"Match")).trim();
+   const teamA=String(info.teamA||info.home||item.homeTeam||item.title||"Match");
+   const teamB=String(info.teamB||info.away||item.awayTeam||"");
+   const matchTitle=String(item.title||item.event_name||(teamA&&teamB?`${teamA} vs ${teamB}`:info.eventName||item.name||"Match")).trim();
 
    events.push({
-    id:String(item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
+    id:String(item.match_id||item.id||matchTitle.toLowerCase().replace(/[^a-z0-9]/g,"")),
+    match_id:String(item.match_id||""),
     title:matchTitle,
-    sport:String(item.Category||info.category||info.name||item.cat||"Other").trim(),
-    comp:String(info.type||info.eventName||item.title||"").trim(),
+    sport:String(item.Category||item.sport||info.category||info.name||item.cat||"Cricket").trim(),
+    comp:String(info.type||info.eventName||item.title||item.tournament||"").trim(),
     a:teamA,
     b:teamB,
-    fa:String(info.teamAFlag||info.homeFlag||""),
-    fb:String(info.teamBFlag||info.awayFlag||""),
+    fa:String(info.teamAFlag||info.homeFlag||item.homeFlag||""),
+    fb:String(info.teamBFlag||info.awayFlag||item.awayFlag||""),
     status:String(item.status||"").toUpperCase(),
     st,en,streams
    });
@@ -291,11 +422,96 @@ function parseEventsFromData(data){
 
 async function loadData(){
  try{
-  const results=await Promise.all(DATA_URLS.map(url=>fetchJson(url)));
+  // Fetch main event lists and Willow JSON concurrently
+  const [results, willowData] = await Promise.all([
+    Promise.all(DATA_URLS.map(url=>fetchJson(url))),
+    fetchJson(WILLOW_JSON_URL)
+  ]);
+
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
-  // Combine matches with identical team names or titles
+  // Merge Willow JSON data into existing matches
+  if (willowData && Array.isArray(willowData.Matches)) {
+    willowData.Matches.forEach(wm => {
+      // Find matching event by match_id or title similarity
+      let targetEvent = allEvents.find(e => e.match_id === wm.match_id || (wm.match_id && e.id === wm.match_id));
+      
+      if (!targetEvent) {
+        // Fallback: match by title text similarity
+        const wmTitle = String(wm.title || "").toLowerCase();
+        targetEvent = allEvents.find(e => {
+          const eTitle = String(e.title || "").toLowerCase();
+          return eTitle.includes(wmTitle) || wmTitle.includes(eTitle);
+        });
+      }
+
+      if (targetEvent) {
+        // Update cover image if available
+        if (wm.cover_image) {
+          targetEvent.fa = wm.cover_image; // Use cover image as teamA flag/poster or keep custom
+        }
+        if (wm.status) {
+          targetEvent.status = wm.status;
+        }
+        if (wm.time) {
+          targetEvent.st = parseBdtTime(wm.time);
+          targetEvent.en = new Date(targetEvent.st.getTime() + 3 * 3600000);
+        }
+
+        // Helper to add servers from alpha/bravo
+        const addServersObj = (obj, prefix) => {
+          if (!obj || typeof obj !== 'object') return;
+          Object.entries(obj).forEach(([serverName, streamUrl]) => {
+            if (!streamUrl || typeof streamUrl !== 'string') return;
+            const cleanUrl = streamUrl.trim();
+            if (!/^https?:\/\//i.test(cleanUrl)) return;
+
+            const streamId = `${prefix}_${serverName.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+            // Avoid duplicate stream links
+            if (!targetEvent.streams.some(s => s.link === cleanUrl)) {
+              targetEvent.streams.push({
+                id: streamId,
+                title: `${serverName} (${prefix === 'alpha' ? 'Alpha' : 'Bravo'})`,
+                link: cleanUrl,
+                type: /\.mpd(?:\?|$)/i.test(cleanUrl) ? "android" : "ios",
+                key: wm.drm_key || "",
+                kid: ""
+              });
+            }
+          });
+        };
+
+        addServersObj(wm.stream_url_alpha, 'alpha');
+        addServersObj(wm.stream_url_bravo, 'bravo');
+
+        // If drm_key is present, update all streams that lack a key
+        if (wm.drm_key) {
+          targetEvent.streams.forEach(s => {
+            if (!s.key) s.key = wm.drm_key;
+          });
+        }
+      }
+    });
+  }
+
+  if(allEvents.length === 0) {
+   allEvents.push({
+    id:"fallback_match",
+    title:"Live Stream Hub Active",
+    sport:"Cricket",
+    comp:"FootxCrate Hub",
+    a:"FootxCrate",
+    b:"Server Live",
+    fa:"",
+    fb:"",
+    status:"LIVE",
+    st:new Date(),
+    en:new Date(Date.now()+7200000),
+    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+   });
+  }
+
   const mergedMap=new Map();
   allEvents.forEach(ev=>{
    const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
@@ -313,11 +529,27 @@ async function loadData(){
   renderHub();
   if(!window.__booted){window.__booted=true;route();}
  }catch(e){
-  $("list").innerHTML=`<div class="state"><div class="err-icon">!</div><h3>Could not load events</h3><p>Please check your connection or feed source.</p><button class="pill" id="retryLoad" type="button">Try again</button></div>`;
+  state.events=[{
+   id:"fallback_match",
+   title:"Live Stream Hub Active",
+   sport:"Cricket",
+   comp:"FootxCrate Hub",
+   a:"FootxCrate",
+   b:"Server Live",
+   fa:"",
+   fb:"",
+   status:"LIVE",
+   st:new Date(),
+   en:new Date(Date.now()+7200000),
+   streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+  }];
+  renderHub();
+  if(!window.__booted){window.__booted=true;route();}
  }
 }
 
 function renderHub(){
+ if(!$("hubView").classList.contains("active")) return;
  const sportFilteredEvents=state.events.filter(e=>{
   const matchSport=state.sport==="All"||e.sport===state.sport;
   const matchQuery=!state.searchQuery||[e.a,e.b,e.comp,e.sport,e.title].some(x=>String(x||"").toLowerCase().includes(state.searchQuery));
@@ -370,7 +602,7 @@ function eventCard(e){
     <span class="status ${s}">${status}</span>
   </div>
   <div class="card-main-click" data-watch-event="${esc(e.id)}">
-    <div class="card-body">${sideA}<div class="versus"><div class="kickoff-time">${timeString(e.st)}</div><div class="kickoff-date">${dateString(e.st)} · IST</div></div>${sideB}</div>
+    <div class="card-body">${sideA}<div class="versus"><div class="kickoff-time">${timeString(e.st)}</div><div class="kickoff-date">${dateString(e.st)}</div></div>${sideB}</div>
   </div>
   <div class="card-foot">
     <span class="stream-count ${n?"":"empty"}">${n?`${n} stream${n>1?"s":""}`:"No streams"}</span>
@@ -455,7 +687,9 @@ async function mountPlayer(record,token){
 }
 
 async function playRecord(record,index){
- if(!record)return;document.querySelectorAll("[data-player-stream]").forEach((b,i)=>b.classList.toggle("active",i===index));
+ if(!record)return;document.querySelectorAll("[data-player-stream-id]").forEach((b)=>{
+  b.classList.toggle("active", b.dataset.playerStreamId === record.id);
+ });
  const token=++playbackToken;await destroyPlayer();if(token!==playbackToken)return;
  const link=String(record.link||"").split("|")[0].trim();if(!/^https?:\/\//i.test(link)){showPlayerError("Invalid stream URL.");return}
  try{await mountPlayer({...record,link},token)}catch(e){if(token===playbackToken){console.error(e);showPlayerError("Unable to start this stream.",e.message||"Check the stream URL and browser compatibility.")}}
@@ -465,7 +699,12 @@ function renderPlayerStreams(activeStreamId){
  const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this event.</p></div>';return}
  box.innerHTML=state.currentStreams.map((s)=>{
   const isActive = s.id === activeStreamId;
-  return `<button class="stream-btn ${isActive?"active":""}" data-player-stream-id="${esc(s.id)}" type="button"><span class="title">${esc(s.title)}</span><span class="tags"><span class="type-badge ${s.type}">${esc(s.type)}</span></span></button>`;
+  const initials = s.title.replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase() || "TV";
+  return `<div class="stream-card ${isActive?"active":""}" data-player-stream-id="${esc(s.id)}">
+    <div class="s-crest">${esc(initials)}</div>
+    <div class="s-title">${esc(s.title)}</div>
+    <div class="s-type">${esc(s.type)}</div>
+  </div>`;
  }).join("");
 }
 
@@ -497,32 +736,171 @@ function showHub(){
 }
 
 async function openPlayer(id, targetStreamId){
- $("hubView").classList.remove("active");$("playerView").classList.add("active");window.scrollTo(0,0);
- const ev=state.events.find(e=>String(e.id)===String(id));
- if(!ev){state.currentEvent=null;state.currentStreams=[];$("playerTitle").textContent="Match not found";$("playerSub").textContent="";$("streams").innerHTML="";showPlayerError("This match is no longer available.");return}
- state.currentEvent=ev;state.currentStreams=ev.streams||[];
- 
+ $("hubView").classList.remove("active");
+ $("playerView").classList.add("active");
+ window.scrollTo(0,0);
+
+ if(state.events.length === 0) {
+  const [results, willowData] = await Promise.all([
+    Promise.all(DATA_URLS.map(url=>fetchJson(url))),
+    fetchJson(WILLOW_JSON_URL)
+  ]);
+  let allEvents=[];
+  results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
+
+  if (willowData && Array.isArray(willowData.Matches)) {
+    willowData.Matches.forEach(wm => {
+      let targetEvent = allEvents.find(e => e.match_id === wm.match_id || (wm.match_id && e.id === wm.match_id));
+      if (!targetEvent) {
+        const wmTitle = String(wm.title || "").toLowerCase();
+        targetEvent = allEvents.find(e => {
+          const eTitle = String(e.title || "").toLowerCase();
+          return eTitle.includes(wmTitle) || wmTitle.includes(eTitle);
+        });
+      }
+      if (targetEvent) {
+        if (wm.cover_image) targetEvent.fa = wm.cover_image;
+        if (wm.status) targetEvent.status = wm.status;
+        if (wm.time) {
+          targetEvent.st = parseBdtTime(wm.time);
+          targetEvent.en = new Date(targetEvent.st.getTime() + 3 * 3600000);
+        }
+        const addServersObj = (obj, prefix) => {
+          if (!obj || typeof obj !== 'object') return;
+          Object.entries(obj).forEach(([serverName, streamUrl]) => {
+            if (!streamUrl || typeof streamUrl !== 'string') return;
+            const cleanUrl = streamUrl.trim();
+            if (!/^https?:\/\//i.test(cleanUrl)) return;
+            const streamId = `${prefix}_${serverName.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+            if (!targetEvent.streams.some(s => s.link === cleanUrl)) {
+              targetEvent.streams.push({
+                id: streamId,
+                title: `${serverName} (${prefix === 'alpha' ? 'Alpha' : 'Bravo'})`,
+                link: cleanUrl,
+                type: /\.mpd(?:\?|$)/i.test(cleanUrl) ? "android" : "ios",
+                key: wm.drm_key || "",
+                kid: ""
+              });
+            }
+          });
+        };
+        addServersObj(wm.stream_url_alpha, 'alpha');
+        addServersObj(wm.stream_url_bravo, 'bravo');
+        if (wm.drm_key) {
+          targetEvent.streams.forEach(s => { if (!s.key) s.key = wm.drm_key; });
+        }
+      }
+    });
+  }
+
+  if(allEvents.length === 0) {
+   allEvents.push({
+    id:"fallback_match",
+    title:"Live Stream Hub Active",
+    sport:"Cricket",
+    comp:"CʀɪᴄxCʀᴀᴛᴇ Lɪᴠᴇ",
+    a:"CʀɪᴄxCʀᴀᴛᴇ",
+    b:"Server Live",
+    fa:"",
+    fb:"",
+    status:"Lɪᴠᴇ",
+    st:new Date(),
+    en:new Date(Date.now()+7200000),
+    streams:[{id:"stream_1",title:"Default Live Stream",link:"https://test-streams.mux.dev/x36hls/x36hls.m3u8",type:"ios"}]
+   });
+  }
+
+  const mergedMap=new Map();
+  allEvents.forEach(ev=>{
+   const key=(ev.a&&ev.b)?`${ev.a.toLowerCase()}_vs_${ev.b.toLowerCase()}`:ev.title.toLowerCase();
+   if(mergedMap.has(key)){
+    const existing=mergedMap.get(key);
+    ev.streams.forEach(st=>{
+     if(!existing.streams.some(x=>x.link===st.link)){existing.streams.push(st);}
+    });
+   }else{
+    mergedMap.set(key,ev);
+   }
+  });
+  state.events=Array.from(mergedMap.values());
+ }
+
+ const ev=state.events.find(e=>String(e.id)===String(id) || String(e.match_id)===String(id));
+ if(!ev){
+  state.currentEvent=null;
+  state.currentStreams=[];
+  $("pmNameA").textContent="Match not found";
+  $("pmNameB").textContent="";
+  $("streams").innerHTML="";
+  showPlayerError("This match is no longer available.");
+  return;
+ }
+
+ state.currentEvent=ev;
+ state.currentStreams=ev.streams||[];
+
+ const teamA = ev.a || ev.title || "Team A";
+ const teamB = ev.b || "";
+ $("pmNameA").textContent = teamA;
+ $("pmNameB").textContent = teamB;
+ $("pmCrestA").outerHTML = crest(ev.fa, teamA).replace('class="crest"', 'id="pmCrestA" class="crest"');
+ if(!teamB) {
+  $("pmCrestB").style.display = "none";
+  $("pmNameB").style.display = "none";
+  document.querySelector(".pm-center-box").style.display = "none";
+ } else {
+  $("pmCrestB").style.display = "grid";
+  $("pmNameB").style.display = "block";
+  document.querySelector(".pm-center-box").style.display = "flex";
+  $("pmCrestB").outerHTML = crest(ev.fb, teamB).replace('class="crest"', 'id="pmCrestB" class="crest"');
+ }
+
  let index = 0;
  if(targetStreamId) {
-  // If targetStreamId is a number (legacy bookmark support), use it as index
   if(/^\d+$/.test(targetStreamId)) {
    index = Math.max(0, Math.min(Number(targetStreamId), state.currentStreams.length - 1));
   } else {
-   // Match by stream id
    const foundIdx = state.currentStreams.findIndex(s => s.id === targetStreamId);
    if(foundIdx !== -1) index = foundIdx;
   }
  }
  state.currentIndex = index;
- 
- $("playerTitle").textContent=ev.a&&ev.b?`${ev.a} vs ${ev.b}`:ev.title||ev.comp||"FootxCrate Player";$("playerSub").textContent=[ev.sport,ev.comp].filter(Boolean).join(" · ");
- 
+
  const rec=state.currentStreams[index];
  renderPlayerStreams(rec ? rec.id : null);
- if(rec) await playRecord(rec, index); else showPlayerError("No playable streams for this match.");
+ if(rec) await playRecord(rec, index); 
+ else showPlayerError("No playable streams for this match.");
 }
 
 function closePopup(){$("popup").classList.remove("visible")}
+
+// Share App URL with Match ID and active Stream ID
+async function handleShareMatchLink() {
+ if(!state.currentEvent) {
+  showToast("No active match to share","",2500);
+  return;
+ }
+ const currentStream = state.currentStreams[state.currentIndex];
+ const streamId = currentStream ? currentStream.id : (state.currentStreams[0] ? state.currentStreams[0].id : "0");
+
+ const shareUrl = `${location.origin}${location.pathname}#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream_id=${encodeURIComponent(streamId)}`;
+
+ try {
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+   await navigator.clipboard.writeText(shareUrl);
+  } else {
+   const ta = document.createElement("textarea");
+   ta.value = shareUrl;
+   document.body.appendChild(ta);
+   ta.select();
+   document.execCommand("copy");
+   document.body.removeChild(ta);
+  }
+  showToast("Exact match link copied!","",3000);
+ } catch(e) {
+  showToast("Failed to copy link","",2500);
+ }
+}
 
 document.addEventListener("DOMContentLoaded",()=>{
  const savedTheme=localStorage.getItem("fc_theme")||"dark";
@@ -544,7 +922,9 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("popupJoinBtn").addEventListener("click",()=>{const w=window.open(TG_LINK,"_blank","noopener");if(!w)location.href=TG_LINK;closePopup()});
  $("popupSkipBtn").addEventListener("click",closePopup);
  $("searchInput").addEventListener("input",e=>{state.searchQuery=e.target.value.toLowerCase().trim();renderHub()});
- $("shareBtn").addEventListener("click",async()=>{try{if(navigator.share)await navigator.share({title:document.title,url:location.href});else{await navigator.clipboard.writeText(location.href);showToast("Page link copied","",2500)}}catch(e){}});
+
+ $("shareStreamIconBtn").addEventListener("click", handleShareMatchLink);
+ $("shareStreamTextBtn").addEventListener("click", handleShareMatchLink);
 });
 
 $("list").addEventListener("click",e=>{
@@ -579,23 +959,19 @@ $("streams").addEventListener("click",e=>{
  if(i===-1||!state.currentStreams[i])return;
  state.currentIndex=i;
  const selectedStream=state.currentStreams[i];
- 
+
  history.replaceState(null,"",`#watch?id=${encodeURIComponent(state.currentEvent.id)}&stream_id=${encodeURIComponent(selectedStream.id)}`);
  playRecord(selectedStream,i);
  renderPlayerStreams(selectedStream.id);
 });
 
-$("backHub").addEventListener("click",()=>{
- if (!isAdmin()) {
-  window.location.replace(TG_LINK);
- } else {
-  location.hash="#/";
- }
-});
-
 window.addEventListener("hashchange",route);
 
-loadData();
+if (initialHash.includes("watch?id=")) {
+ route();
+} else {
+ loadData();
+}
 
 setInterval(()=>{
  if(window.__booted&&!location.hash.includes("watch")&&!document.hidden){loadData()}
