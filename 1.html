@@ -42,7 +42,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .join-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,136,204,.5);filter:brightness(1.05)}
 .join-btn svg{width:14px;height:14px;transition:transform .3s ease}.join-btn:hover svg{transform:scale(1.15) rotate(-8deg)}
 
-/* Mode Switcher Slider / Buttons replacing Search */
+/* Mode Switcher Slider replacing Search Bar */
 .mode-switcher{display:flex;gap:10px;margin-bottom:22px;background:var(--surface2);padding:4px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
 .mode-btn{flex:1;padding:12px;border-radius:10px;font:700 13.5px var(--display);color:var(--muted);text-align:center;cursor:pointer;transition:all .25s ease;background:transparent;border:0}
 .mode-btn.active{background:var(--olive);color:var(--cream);box-shadow:0 4px 15px rgba(95,104,76,.35)}
@@ -213,7 +213,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
   </div>
 </header>
 
-<!-- Mode Switcher Slider replacing Search Bar -->
+<!-- Mode Switcher Slider -->
 <div class="mode-switcher" role="tablist">
   <button class="mode-btn active" id="modeMatchesBtn" type="button">🏏 Match Schedule</button>
   <button class="mode-btn" id="modeChannelsBtn" type="button">📺 Live TV Channels</button>
@@ -287,7 +287,7 @@ const $=id=>document.getElementById(id);
 const state={events:[],channels:[],currentMode:"matches",sport:"All",tab:"all",searchQuery:"",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
 let player=null,overlay=null,playbackToken=0,toastTimer=null;
 
-const esc=v=>String(v?=""].replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function isAdmin() {
     const hash = location.hash;
@@ -423,7 +423,6 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
-  // Merge Willow JSON servers & mod keys
   if (willowData && Array.isArray(willowData.Matches)) {
     willowData.Matches.forEach(wm => {
       let targetEvent = allEvents.find(e => {
@@ -433,7 +432,7 @@ async function loadData(){
         if (cleanE && cleanWm && (cleanE.includes(cleanWm) || cleanWm.includes(cleanE))) return true;
         const teamA = sanitizeTitle(e.a);
         const teamB = sanitizeTitle(e.b);
-        if (teamA && teamB && cleanWm.includes(teamA) && wmClean.includes(teamB)) return true;
+        if (teamA && teamB && cleanWm.includes(teamA) && cleanWm.includes(teamB)) return true;
         return false;
       });
 
@@ -471,7 +470,6 @@ async function loadData(){
     });
   }
 
-  // Parse Channels Data (sportlink channel list)
   if (channelsData && Array.isArray(channelsData.channels)) {
     state.channels = channelsData.channels.map(ch => {
       const streams = [];
@@ -790,7 +788,6 @@ async function openPlayer(id, targetStreamId){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  // Re-parse channels for openPlayer fallback
   if (channelsData && Array.isArray(channelsData.channels)) {
     state.channels = channelsData.channels.map(ch => {
       const streams = [];
@@ -844,7 +841,7 @@ async function openPlayer(id, targetStreamId){
  if(!ev){
   state.currentEvent=null;
   state.currentStreams=[];
-  $("pmNameA").textContent="Match not found";
+  $("pmNameA").textContent="Event not found";
   $("pmNameB").textContent="";
   $("streams").innerHTML="";
   showPlayerError("This event or channel is no longer available.");
@@ -889,7 +886,6 @@ async function openPlayer(id, targetStreamId){
 
 function closePopup(){$("popup").classList.remove("visible")}
 
-// Share App URL with Match ID and active Stream ID
 async function handleShareMatchLink() {
  if(!state.currentEvent) {
   showToast("No active match to share","",2500);
@@ -937,7 +933,6 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("popupJoinBtn").addEventListener("click",()=>{const w=window.open(TG_LINK,"_blank","noopener");if(!w)location.href=TG_LINK;closePopup()});
  $("popupSkipBtn").addEventListener("click",closePopup);
 
- // Mode Switcher Listeners
  $("modeMatchesBtn").addEventListener("click",()=>{
   state.currentMode="matches";
   $("modeMatchesBtn").classList.add("active");
@@ -993,7 +988,6 @@ $("streams").addEventListener("click",e=>{
  const b=e.target.closest("[data-player-stream-id]");
  if(!b||!state.currentEvent)return;
  const streamId=b.dataset.playerStreamId;
- const allCombined=[...state.events, ...state.channels];
  const i=state.currentStreams.findIndex(s=>s.id===streamId);
  if(i===-1||!state.currentStreams[i])return;
  state.currentIndex=i;
