@@ -377,6 +377,14 @@ function parseEventsFromData(data){
  return events;
 }
 
+// Robust fuzzy matcher helper function
+function sanitizeTitle(str) {
+  return String(str || "").toLowerCase()
+    .replace(/under[- ]?19/g, "u19")
+    .replace(/women'?s?/g, "w")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 async function loadData(){
  try{
   const [results, willowData] = await Promise.all([
@@ -387,14 +395,25 @@ async function loadData(){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
 
-  // Merge Willow JSON servers & mod keys only (No thumbnail/cover image)
+  // Merge Willow JSON servers & mod keys using advanced multi-tier matching
   if (willowData && Array.isArray(willowData.Matches)) {
     willowData.Matches.forEach(wm => {
       let targetEvent = allEvents.find(e => {
+        // Tier 1: Match ID check
         if (wm.match_id && (e.match_id === wm.match_id || e.id === wm.match_id)) return true;
-        const cleanE = String(e.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const cleanWm = String(wm.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        return cleanE.includes(cleanWm) || cleanWm.includes(cleanE);
+        
+        // Tier 2: Normalized sanitized title check
+        const cleanE = sanitizeTitle(e.title);
+        const cleanWm = sanitizeTitle(wm.title);
+        if (cleanE && cleanWm && (cleanE.includes(cleanWm) || cleanWm.includes(cleanE))) return true;
+
+        // Tier 3: Team A and Team B keyword overlap check
+        const teamA = sanitizeTitle(e.a);
+        const teamB = sanitizeTitle(e.b);
+        const wmClean = sanitizeTitle(wm.title);
+        if (teamA && teamB && wmClean.includes(teamA) && wmClean.includes(teamB)) return true;
+
+        return false;
       });
 
       if (targetEvent) {
@@ -409,7 +428,7 @@ async function loadData(){
             if (!targetEvent.streams.some(s => s.link === cleanUrl)) {
               targetEvent.streams.push({
                 id: streamId,
-                title: `${serverName} (${prefix === 'alpha' ? 'Alpha' : 'Bravo'})`,
+                title: `${serverName} (${prefix === 'alpha' ? 'Willow Alpha' : 'Willow Bravo'})`,
                 link: cleanUrl,
                 type: /\.mpd(?:\?|$)/i.test(cleanUrl) ? "android" : "ios",
                 key: wm.drm_key || "",
@@ -688,9 +707,13 @@ async function openPlayer(id, targetStreamId){
     willowData.Matches.forEach(wm => {
       let targetEvent = allEvents.find(e => {
         if (wm.match_id && (e.match_id === wm.match_id || e.id === wm.match_id)) return true;
-        const cleanE = String(e.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const cleanWm = String(wm.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        return cleanE.includes(cleanWm) || cleanWm.includes(cleanE);
+        const cleanE = sanitizeTitle(e.title);
+        const cleanWm = sanitizeTitle(wm.title);
+        if (cleanE && cleanWm && (cleanE.includes(cleanWm) || cleanWm.includes(cleanE))) return true;
+        const teamA = sanitizeTitle(e.a);
+        const teamB = sanitizeTitle(e.b);
+        if (teamA && teamB && cleanWm.includes(teamA) && cleanWm.includes(teamB)) return true;
+        return false;
       });
       if (targetEvent) {
         const addServersObj = (obj, prefix) => {
@@ -703,7 +726,7 @@ async function openPlayer(id, targetStreamId){
             if (!targetEvent.streams.some(s => s.link === cleanUrl)) {
               targetEvent.streams.push({
                 id: streamId,
-                title: `${serverName} (${prefix === 'alpha' ? 'Alpha' : 'Bravo'})`,
+                title: `${serverName} (${prefix === 'alpha' ? 'Willow Alpha' : 'Willow Bravo'})`,
                 link: cleanUrl,
                 type: /\.mpd(?:\?|$)/i.test(cleanUrl) ? "android" : "ios",
                 key: wm.drm_key || "",
