@@ -229,7 +229,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
     </div>
   </div>
 
-  <h3 class="section-title">Stream Source</h3>
+  <h3 class="section-title">Stream Servers (Main & Backup)</h3>
   <div class="streams" id="streams"></div>
 </section>
 </div>
@@ -471,30 +471,24 @@ async function loadData(){
     });
   }
 
-  // Combine channels from both sources and deduplicate by name/id
-  let rawChannelsMap = new Map();
-  channelResults.forEach(channelsData => {
-    if (channelsData) {
-      var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
-      rawChList.forEach(ch => {
-        var keyName = String(ch.name || ch.id || "").toLowerCase().trim();
-        if (keyName && !rawChannelsMap.has(keyName)) {
-          rawChannelsMap.set(keyName, ch);
-        }
-      });
-    }
-  });
+  // Map channels and merge Main & Backup JSON sources by channel name
+  let channelMap = new Map();
 
-  state.channels = Array.from(rawChannelsMap.values()).map(ch => {
-    var streams = [];
+  // 1. Process Main JSON (sonujson-v7)
+  var mainList = channelResults[0] ? (Array.isArray(channelResults[0]) ? channelResults[0] : (channelResults[0].channels || [])) : [];
+  mainList.forEach(ch => {
+    var nameKey = String(ch.name || "").toLowerCase().trim();
+    if (!nameKey) return;
+    
     var ckMap = buildClearKeys(ch);
     var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
     var firstKey = ckMap[firstKid] || ch.key || "";
 
+    var streams = [];
     if (ch.stream_url) {
       streams.push({
-        id: "main_stream",
-        title: "Main Stream",
+        id: "main_server",
+        title: "Main Server",
         link: ch.stream_url,
         type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
         key: firstKey,
@@ -503,21 +497,72 @@ async function loadData(){
       });
     }
 
-    return {
+    channelMap.set(nameKey, {
       id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
       title: ch.name || "Channel",
       sport: "Live TV",
       comp: "Sports Channels",
       a: ch.name || "Channel",
       b: "",
-      fa: ch.logo || LOGO_MAP?.[ch.id] || "",
+      fa: ch.logo || "",
       fb: "",
       status: "LIVE",
       st: new Date(Date.now() - 3600000),
       en: new Date(Date.now() + 86400000),
       streams
-    };
+    });
   });
+
+  // 2. Process Backup JSON (sportlink-tv11) and add as Backup Server
+  var backupList = channelResults[1] ? (Array.isArray(channelResults[1]) ? channelResults[1] : (channelResults[1].channels || [])) : [];
+  backupList.forEach(ch => {
+    var nameKey = String(ch.name || "").toLowerCase().trim();
+    if (!nameKey) return;
+
+    var ckMap = buildClearKeys(ch);
+    var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+    var firstKey = ckMap[firstKid] || ch.key || "";
+
+    if (ch.stream_url) {
+      var backupStream = {
+        id: "backup_server",
+        title: "Backup Server",
+        link: ch.stream_url,
+        type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
+        key: firstKey,
+        kid: firstKid,
+        cookie: ch.cookie || ""
+      };
+
+      if (channelMap.has(nameKey)) {
+        var existing = channelMap.get(nameKey);
+        // Avoid duplicate link if same
+        if (!existing.streams.some(s => s.link === ch.stream_url)) {
+          existing.streams.push(backupStream);
+        }
+        if (!existing.fa && ch.logo) {
+          existing.fa = ch.logo;
+        }
+      } else {
+        channelMap.set(nameKey, {
+          id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
+          title: ch.name || "Channel",
+          sport: "Live TV",
+          comp: "Sports Channels",
+          a: ch.name || "Channel",
+          b: "",
+          fa: ch.logo || "",
+          fb: "",
+          status: "LIVE",
+          st: new Date(Date.now() - 3600000),
+          en: new Date(Date.now() + 86400000),
+          streams: [backupStream]
+        });
+      }
+    }
+  });
+
+  state.channels = Array.from(channelMap.values());
 
   if(allEvents.length === 0) {
    allEvents.push({
@@ -586,7 +631,7 @@ function renderHub(){
       <img class="channel-logo" src="${esc(ch.fa)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">
       <div class="channel-info">
         <div class="channel-name">${esc(ch.title)}</div>
-        <div class="channel-status"><span class="dot"></span> Live Channel</div>
+        <div class="channel-status"><span class="dot"></span> Live • ${ch.streams.length} Server${ch.streams.length>1?'s':''}</div>
       </div>
     </div>
   `).join("");
@@ -805,29 +850,19 @@ async function openPlayer(id, targetStreamId){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  let rawChannelsMap = new Map();
-  channelResults.forEach(channelsData => {
-    if (channelsData) {
-      var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
-      rawChList.forEach(ch => {
-        var keyName = String(ch.name || ch.id || "").toLowerCase().trim();
-        if (keyName && !rawChannelsMap.has(keyName)) {
-          rawChannelsMap.set(keyName, ch);
-        }
-      });
-    }
-  });
-
-  state.channels = Array.from(rawChannelsMap.values()).map(ch => {
-    var streams = [];
+  let channelMap = new Map();
+  var mainList = channelResults[0] ? (Array.isArray(channelResults[0]) ? channelResults[0] : (channelResults[0].channels || [])) : [];
+  mainList.forEach(ch => {
+    var nameKey = String(ch.name || "").toLowerCase().trim();
+    if (!nameKey) return;
     var ckMap = buildClearKeys(ch);
     var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
     var firstKey = ckMap[firstKid] || ch.key || "";
-
+    var streams = [];
     if (ch.stream_url) {
       streams.push({
-        id: "main_stream",
-        title: "Main Stream",
+        id: "main_server",
+        title: "Main Server",
         link: ch.stream_url,
         type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
         key: firstKey,
@@ -835,8 +870,7 @@ async function openPlayer(id, targetStreamId){
         cookie: ch.cookie || ""
       });
     }
-
-    return {
+    channelMap.set(nameKey, {
       id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
       title: ch.name || "Channel",
       sport: "Live TV",
@@ -849,9 +883,53 @@ async function openPlayer(id, targetStreamId){
       st: new Date(Date.now() - 3600000),
       en: new Date(Date.now() + 86400000),
       streams
-    };
+    });
   });
 
+  var backupList = channelResults[1] ? (Array.isArray(channelResults[1]) ? channelResults[1] : (channelResults[1].channels || [])) : [];
+  backupList.forEach(ch => {
+    var nameKey = String(ch.name || "").toLowerCase().trim();
+    if (!nameKey) return;
+    var ckMap = buildClearKeys(ch);
+    var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+    var firstKey = ckMap[firstKid] || ch.key || "";
+
+    if (ch.stream_url) {
+      var backupStream = {
+        id: "backup_server",
+        title: "Backup Server",
+        link: ch.stream_url,
+        type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
+        key: firstKey,
+        kid: firstKid,
+        cookie: ch.cookie || ""
+      };
+      if (channelMap.has(nameKey)) {
+        var existing = channelMap.get(nameKey);
+        if (!existing.streams.some(s => s.link === ch.stream_url)) {
+          existing.streams.push(backupStream);
+        }
+        if (!existing.fa && ch.logo) existing.fa = ch.logo;
+      } else {
+        channelMap.set(nameKey, {
+          id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
+          title: ch.name || "Channel",
+          sport: "Live TV",
+          comp: "Sports Channels",
+          a: ch.name || "Channel",
+          b: "",
+          fa: ch.logo || "",
+          fb: "",
+          status: "LIVE",
+          st: new Date(Date.now() - 3600000),
+          en: new Date(Date.now() + 86400000),
+          streams: [backupStream]
+        });
+      }
+    }
+  });
+
+  state.channels = Array.from(channelMap.values());
   state.events = allEvents;
  }
 
