@@ -15,14 +15,12 @@
 [data-theme="dark"]{--cream:#0D0E10;--olive:#7E8F6A;--white:#17191C;--ink:#F4F6F8;--muted:#9FA6AD;--accent:#3399ff;--border:rgba(255,255,255,.1);--surface2:#202327;--surface3:#2A2E33;--shadow:0 12px 35px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);--shadow-deep:0 20px 50px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font:400 15px/1.5 var(--body);color:var(--ink);background:var(--cream);min-height:100vh;padding-bottom:40px;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;position:relative}
 
-/* Watery Fluid Flow Background Animation */
 body:before{content:"";position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(95,104,76,.16),transparent 45%),radial-gradient(circle at 70% 70%,rgba(0,136,204,.12),transparent 50%),radial-gradient(circle at 50% 50%,rgba(255,51,85,.07),transparent 55%);animation:wateryFlow 16s ease infinite alternate;pointer-events:none;z-index:0}
 @keyframes wateryFlow{0%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(-30px,20px) rotate(3deg) scale(1.03)}100%{transform:translate(20px,-25px) rotate(-3deg) scale(0.97)}}
 
 button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;background:none;will-change:transform;transition:transform 0.18s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.18s ease}button:active{transform:scale(0.93)!important}a{color:var(--accent);text-decoration:none}img{display:block;max-width:100%}[hidden]{display:none!important}:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .container{max-width:1320px;margin:auto;padding:0 20px;position:relative;z-index:1}.view{display:none}.view.active{display:block;animation:fade .28s cubic-bezier(0.16, 1, 0.3, 1)}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* Single Line Header Styling */
 .header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:22px;background:var(--white);margin-left:-20px;margin-right:-20px;box-shadow:var(--shadow);flex-wrap:nowrap}
 .brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:0 6px 20px rgba(0,136,204,.3);flex:none}
@@ -42,7 +40,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .join-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,136,204,.5);filter:brightness(1.05)}
 .join-btn svg{width:14px;height:14px;transition:transform .3s ease}.join-btn:hover svg{transform:scale(1.15) rotate(-8deg)}
 
-/* Mode Switcher Slider */
 .mode-switcher{display:flex;gap:10px;margin-bottom:22px;background:var(--surface2);padding:4px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
 .mode-btn{flex:1;padding:12px;border-radius:10px;font:700 13.5px var(--display);color:var(--muted);text-align:center;cursor:pointer;transition:all .25s ease;background:transparent;border:0}
 .mode-btn.active{background:var(--olive);color:var(--cream);box-shadow:0 4px 15px rgba(95,104,76,.35)}
@@ -54,9 +51,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .pill .count{font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--surface3);color:var(--muted)}
 .pill.active .count{background:rgba(255,255,255,.25);color:var(--cream)}
 
-/* Match Grid 1 column */
 .grid{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:48px}
-/* Channels Grid 3 columns */
 .channels-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-bottom:48px}
 
 .card{display:flex;flex-direction:column;gap:14px;padding:20px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);text-align:left;font:inherit;color:inherit;transition:all .3s cubic-bezier(0.16, 1, 0.3, 1);position:relative;overflow:hidden;box-shadow:var(--shadow);width:100%}
@@ -92,7 +87,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
 
-/* Channel Card Item Style */
 .channel-card{display:flex;align-items:center;gap:14px;padding:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .25s ease;box-shadow:var(--shadow)}
 .channel-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--surface2);box-shadow:var(--shadow-deep)}
 .channel-logo{width:50px;height:50px;border-radius:12px;object-fit:contain;background:var(--surface3);padding:4px;border:1px solid var(--border);flex:none}
@@ -101,7 +95,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .channel-status{font-size:11px;color:var(--live);font-weight:600;margin-top:2px;display:flex;align-items:center;gap:5px}
 .channel-status .dot{width:5px;height:5px;background:var(--live);border-radius:50%}
 
-/* Player Top Header Styling */
 .player-top-header{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;position:relative;max-width:980px;margin:0 auto}
 .player-brand-badge{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
 .player-brand-badge .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,136,204,.3)}
@@ -249,7 +242,10 @@ const DATA_URLS = [
   "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json"
 ];
 const WILLOW_JSON_URL = "https://raw.githubusercontent.com/srhady/willow-event/refs/heads/main/live_sports.json";
-const CHANNELS_JSON_URL = "https://sportlink-tv11.pages.dev/Data.json";
+const CHANNELS_URLS = [
+  "https://sonujson-v7.pages.dev/Data/sports.json",
+  "https://sportlink-tv11.pages.dev/Data.json"
+];
 const TG_LINK="https://t.me/+_Rw99hQyOxplYmJl";
 const $=id=>document.getElementById(id);
 const state={events:[],channels:[],currentMode:"matches",sport:"All",tab:"all",currentEvent:null,currentStreams:[],currentIndex:0,favsTeams:JSON.parse(localStorage.getItem("fc_fav_teams")||"[]")};
@@ -380,7 +376,7 @@ function sanitizeTitle(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-// Helpers for clean single channel keys parsing
+// Helpers for keys parsing
 function rawCookie(c){
   return c && c.startsWith("__hdnea__=") ? c.slice(10) : (c || "");
 }
@@ -401,8 +397,9 @@ function normalizeKidKey(kid, key){
 }
 function buildClearKeys(ch){
   var out = {};
-  if(Array.isArray(ch.sportlink) && ch.sportlink.length > 0){
-    ch.sportlink.forEach(function(entry){
+  var arr = ch.sonuxs || ch.sportlink;
+  if(Array.isArray(arr) && arr.length > 0){
+    arr.forEach(function(entry){
       if(typeof entry !== "string") return;
       var parts = entry.split(":");
       if(parts.length < 2) return;
@@ -418,10 +415,10 @@ function buildClearKeys(ch){
 
 async function loadData(){
  try{
-  const [results, willowData, channelsData] = await Promise.all([
+  const [results, willowData, channelResults] = await Promise.all([
     Promise.all(DATA_URLS.map(url=>fetchJson(url))),
     fetchJson(WILLOW_JSON_URL),
-    fetchJson(CHANNELS_JSON_URL)
+    Promise.all(CHANNELS_URLS.map(url=>fetchJson(url)))
   ]);
 
   let allEvents=[];
@@ -474,43 +471,53 @@ async function loadData(){
     });
   }
 
-  // Parse SportLink TV Channels Data cleanly (Single channel with its direct stream_url and key)
-  if (channelsData) {
-    var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
-    state.channels = rawChList.map(ch => {
-      var streams = [];
-      var ckMap = buildClearKeys(ch);
-      var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
-      var firstKey = ckMap[firstKid] || ch.key || "";
+  // Combine channels from both sources and deduplicate by name/id
+  let rawChannelsMap = new Map();
+  channelResults.forEach(channelsData => {
+    if (channelsData) {
+      var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
+      rawChList.forEach(ch => {
+        var keyName = String(ch.name || ch.id || "").toLowerCase().trim();
+        if (keyName && !rawChannelsMap.has(keyName)) {
+          rawChannelsMap.set(keyName, ch);
+        }
+      });
+    }
+  });
 
-      if (ch.stream_url) {
-        streams.push({
-          id: "main_stream",
-          title: "Main Stream",
-          link: ch.stream_url,
-          type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
-          key: firstKey,
-          kid: firstKid,
-          cookie: ch.cookie || ""
-        });
-      }
+  state.channels = Array.from(rawChannelsMap.values()).map(ch => {
+    var streams = [];
+    var ckMap = buildClearKeys(ch);
+    var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+    var firstKey = ckMap[firstKid] || ch.key || "";
 
-      return {
-        id: `channel_${ch.id}`,
-        title: ch.name,
-        sport: "Live TV",
-        comp: "Sports Channels",
-        a: ch.name,
-        b: "",
-        fa: ch.logo || "",
-        fb: "",
-        status: "LIVE",
-        st: new Date(Date.now() - 3600000),
-        en: new Date(Date.now() + 86400000),
-        streams
-      };
-    });
-  }
+    if (ch.stream_url) {
+      streams.push({
+        id: "main_stream",
+        title: "Main Stream",
+        link: ch.stream_url,
+        type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
+        key: firstKey,
+        kid: firstKid,
+        cookie: ch.cookie || ""
+      });
+    }
+
+    return {
+      id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
+      title: ch.name || "Channel",
+      sport: "Live TV",
+      comp: "Sports Channels",
+      a: ch.name || "Channel",
+      b: "",
+      fa: ch.logo || LOGO_MAP?.[ch.id] || "",
+      fb: "",
+      status: "LIVE",
+      st: new Date(Date.now() - 3600000),
+      en: new Date(Date.now() + 86400000),
+      streams
+    };
+  });
 
   if(allEvents.length === 0) {
    allEvents.push({
@@ -790,50 +797,60 @@ async function openPlayer(id, targetStreamId){
  window.scrollTo(0,0);
 
  if(state.events.length === 0 || state.channels.length === 0) {
-  const [results, willowData, channelsData] = await Promise.all([
+  const [results, willowData, channelResults] = await Promise.all([
     Promise.all(DATA_URLS.map(url=>fetchJson(url))),
     fetchJson(WILLOW_JSON_URL),
-    fetchJson(CHANNELS_JSON_URL)
+    Promise.all(CHANNELS_URLS.map(url=>fetchJson(url)))
   ]);
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  if (channelsData) {
-    var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
-    state.channels = rawChList.map(ch => {
-      var streams = [];
-      var ckMap = buildClearKeys(ch);
-      var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
-      var firstKey = ckMap[firstKid] || ch.key || "";
+  let rawChannelsMap = new Map();
+  channelResults.forEach(channelsData => {
+    if (channelsData) {
+      var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
+      rawChList.forEach(ch => {
+        var keyName = String(ch.name || ch.id || "").toLowerCase().trim();
+        if (keyName && !rawChannelsMap.has(keyName)) {
+          rawChannelsMap.set(keyName, ch);
+        }
+      });
+    }
+  });
 
-      if (ch.stream_url) {
-        streams.push({
-          id: "main_stream",
-          title: "Main Stream",
-          link: ch.stream_url,
-          type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
-          key: firstKey,
-          kid: firstKid,
-          cookie: ch.cookie || ""
-        });
-      }
+  state.channels = Array.from(rawChannelsMap.values()).map(ch => {
+    var streams = [];
+    var ckMap = buildClearKeys(ch);
+    var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+    var firstKey = ckMap[firstKid] || ch.key || "";
 
-      return {
-        id: `channel_${ch.id}`,
-        title: ch.name,
-        sport: "Live TV",
-        comp: "Sports Channels",
-        a: ch.name,
-        b: "",
-        fa: ch.logo || "",
-        fb: "",
-        status: "LIVE",
-        st: new Date(Date.now() - 3600000),
-        en: new Date(Date.now() + 86400000),
-        streams
-      };
-    });
-  }
+    if (ch.stream_url) {
+      streams.push({
+        id: "main_stream",
+        title: "Main Stream",
+        link: ch.stream_url,
+        type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
+        key: firstKey,
+        kid: firstKid,
+        cookie: ch.cookie || ""
+      });
+    }
+
+    return {
+      id: `channel_${ch.id || Math.random().toString(36).substring(7)}`,
+      title: ch.name || "Channel",
+      sport: "Live TV",
+      comp: "Sports Channels",
+      a: ch.name || "Channel",
+      b: "",
+      fa: ch.logo || "",
+      fb: "",
+      status: "LIVE",
+      st: new Date(Date.now() - 3600000),
+      en: new Date(Date.now() + 86400000),
+      streams
+    };
+  });
 
   state.events = allEvents;
  }
