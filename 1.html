@@ -231,7 +231,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
     </div>
   </div>
 
-  <h3 class="section-title">Channel Sources</h3>
+  <h3 class="section-title">Channel Servers</h3>
   <div class="streams" id="streams"></div>
 </section>
 </div>
@@ -433,20 +433,37 @@ async function loadData(){
     });
   }
 
-  // Parse SportLink TV Channels Data cleanly (Direct mapping of single channel data)
+  // Parse SportLink TV Channels Data cleanly into individual stream servers & keys
   if (channelsData && Array.isArray(channelsData.channels)) {
     state.channels = channelsData.channels.map(ch => {
       const streams = [];
       
-      // If the channel has its own direct stream_url and key / key_id
+      // 1. Add main stream_url with channel's direct key & key_id
       if (ch.stream_url) {
         streams.push({
-          id: "main_stream",
-          title: "Main Stream",
+          id: "main_server",
+          title: "Main Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
           key: ch.key || "",
           kid: ch.key_id || ""
+        });
+      }
+
+      // 2. Parse sportlink keys array as individual alternative servers
+      if (Array.isArray(ch.sportlink)) {
+        ch.sportlink.forEach((sl, idx) => {
+          const parts = sl.split(":");
+          if (parts.length >= 2) {
+            streams.push({
+              id: `sportlink_${idx}`,
+              title: `Server ${idx + 1}`,
+              link: ch.stream_url || "",
+              type: "android",
+              key: parts[1].trim(),
+              kid: parts[0].trim()
+            });
+          }
         });
       }
 
@@ -534,7 +551,7 @@ function renderHub(){
       <img class="channel-logo" src="${esc(ch.fa)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">
       <div class="channel-info">
         <div class="channel-name">${esc(ch.title)}</div>
-        <div class="channel-status"><span class="dot"></span> Live Channel</div>
+        <div class="channel-status"><span class="dot"></span> Live • ${ch.streams.length} Server${ch.streams.length>1?'s':''}</div>
       </div>
     </div>
   `).join("");
@@ -745,12 +762,27 @@ async function openPlayer(id, targetStreamId){
       const streams = [];
       if (ch.stream_url) {
         streams.push({
-          id: "main_stream",
-          title: "Main Stream",
+          id: "main_server",
+          title: "Main Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
           key: ch.key || "",
           kid: ch.key_id || ""
+        });
+      }
+      if (Array.isArray(ch.sportlink)) {
+        ch.sportlink.forEach((sl, idx) => {
+          const parts = sl.split(":");
+          if (parts.length >= 2) {
+            streams.push({
+              id: `sportlink_${idx}`,
+              title: `Server ${idx + 1}`,
+              link: ch.stream_url || "",
+              type: "android",
+              key: parts[1].trim(),
+              kid: parts[0].trim()
+            });
+          }
         });
       }
       return {
