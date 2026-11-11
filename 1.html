@@ -87,7 +87,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 
 .status{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 9px;border-radius:6px;text-transform:uppercase}.status.live{color:var(--live);background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.3)}.status.soon{color:var(--soon);background:rgba(212,136,6,.12);border:1px solid rgba(212,136,6,.3)}.status.done{color:var(--done);background:rgba(92,107,128,.12);border:1px solid rgba(92,107,128,.25)}
 
-/* Channel Card Item Style */
 .channel-card{display:flex;align-items:center;gap:14px;padding:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .25s ease;box-shadow:var(--shadow)}
 .channel-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--surface2);box-shadow:var(--shadow-deep)}
 .channel-logo{width:50px;height:50px;border-radius:12px;object-fit:contain;background:var(--surface3);padding:4px;border:1px solid var(--border);flex:none}
@@ -96,7 +95,6 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
 .channel-status{font-size:11px;color:var(--live);font-weight:600;margin-top:2px;display:flex;align-items:center;gap:5px}
 .channel-status .dot{width:5px;height:5px;background:var(--live);border-radius:50%}
 
-/* Player Top Header Styling */
 .player-top-header{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;position:relative;max-width:980px;margin:0 auto}
 .player-brand-badge{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
 .player-brand-badge .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--olive),#0088cc);color:var(--cream);display:grid;place-items:center;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,136,204,.3)}
@@ -375,6 +373,42 @@ function sanitizeTitle(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+// Helpers from exact SportLink parser logic
+function rawCookie(c){
+  return c && c.startsWith("__hdnea__=") ? c.slice(10) : (c || "");
+}
+function withCookie(u, r){
+  if(!u || !r) return u;
+  if(u.indexOf("__hdnea__") !== -1) return u;
+  return u + (u.indexOf("?") !== -1 ? "&" : "?") + "__hdnea__=" + r;
+}
+function isNonEmpty(v){
+  return typeof v === "string" && v.trim().length > 0;
+}
+function normalizeKidKey(kid, key){
+  if(!isNonEmpty(kid) || !isNonEmpty(key)) return null;
+  return {
+    kid: kid.trim().toLowerCase(),
+    key: key.trim().toLowerCase()
+  };
+}
+function buildClearKeys(ch){
+  var out = {};
+  if(Array.isArray(ch.sportlink) && ch.sportlink.length > 0){
+    ch.sportlink.forEach(function(entry){
+      if(typeof entry !== "string") return;
+      var parts = entry.split(":");
+      if(parts.length < 2) return;
+      var pair = normalizeKidKey(parts[0], parts[1]);
+      if(pair) out[pair.kid] = pair.key;
+    });
+    if(Object.keys(out).length > 0) return out;
+  }
+  var single = normalizeKidKey(ch.key_id, ch.key);
+  if(single) out[single.kid] = single.key;
+  return out;
+}
+
 async function loadData(){
  try{
   const [results, willowData, channelsData] = await Promise.all([
@@ -433,27 +467,30 @@ async function loadData(){
     });
   }
 
-  // Parse SportLink TV Channels Data cleanly into individual stream servers & keys
-  if (channelsData && Array.isArray(channelsData.channels)) {
-    state.channels = channelsData.channels.map(ch => {
-      const streams = [];
-      
-      // 1. Add main stream_url with channel's direct key & key_id
+  // Parse SportLink TV Channels Data with exact clearKeys parsing & multiple sportlink servers
+  if (channelsData) {
+    var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
+    state.channels = rawChList.map(ch => {
+      var streams = [];
+      var ckMap = buildClearKeys(ch);
+      var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+      var firstKey = ckMap[firstKid] || ch.key || "";
+
       if (ch.stream_url) {
         streams.push({
-          id: "main_server",
-          title: "Main Server",
+          id: "primary_server",
+          title: "Primary Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
-          key: ch.key || "",
-          kid: ch.key_id || ""
+          key: firstKey,
+          kid: firstKid,
+          cookie: ch.cookie || ""
         });
       }
 
-      // 2. Parse sportlink keys array as individual alternative servers
       if (Array.isArray(ch.sportlink)) {
         ch.sportlink.forEach((sl, idx) => {
-          const parts = sl.split(":");
+          var parts = sl.split(":");
           if (parts.length >= 2) {
             streams.push({
               id: `sportlink_${idx}`,
@@ -461,7 +498,8 @@ async function loadData(){
               link: ch.stream_url || "",
               type: "android",
               key: parts[1].trim(),
-              kid: parts[0].trim()
+              kid: parts[0].trim(),
+              cookie: ch.cookie || ""
             });
           }
         });
@@ -666,6 +704,20 @@ async function mountShaka(record,token){
  });
 
  const ck=getClearKey(record);if(ck)instance.configure({drm:{clearKeys:{[ck.keyId]:ck.key}}});
+
+ // Register request filter to append JioTV cookies if present
+ if(record.cookie){
+  var rawC = rawCookie(record.cookie);
+  var T = shaka.net.NetworkingEngine.RequestType;
+  instance.getNetworkingEngine().registerRequestFilter(function(type, req){
+    req.headers["Referer"]    = "https://www.jiotv.com/";
+    req.headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
+    req.headers["Cookie"]     = record.cookie;
+    if(type === T.MANIFEST || type === T.SEGMENT)
+      req.uris = req.uris.map(function(u){ return withCookie(u, rawC); });
+  });
+ }
+
  instance.addEventListener("error",ev=>{const e=ev.detail;console.error("Shaka error",e);if(token===playbackToken&&e?.severity===shaka.util.Error.Severity.CRITICAL)showToast("Stream playback error","",5000)});
  await instance.load(record.link);if(token!==playbackToken)return;
  try{await video.play()}catch(e){showToast("Tap Play to start the stream","",5000)}
@@ -757,22 +809,28 @@ async function openPlayer(id, targetStreamId){
   let allEvents=[];
   results.forEach(res=>{if(res)allEvents=allEvents.concat(parseEventsFromData(res));});
   
-  if (channelsData && Array.isArray(channelsData.channels)) {
-    state.channels = channelsData.channels.map(ch => {
-      const streams = [];
+  if (channelsData) {
+    var rawChList = Array.isArray(channelsData) ? channelsData : (channelsData.channels || []);
+    state.channels = rawChList.map(ch => {
+      var streams = [];
+      var ckMap = buildClearKeys(ch);
+      var firstKid = Object.keys(ckMap)[0] || ch.key_id || "";
+      var firstKey = ckMap[firstKid] || ch.key || "";
+
       if (ch.stream_url) {
         streams.push({
-          id: "main_server",
-          title: "Main Server",
+          id: "primary_server",
+          title: "Primary Server",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
-          key: ch.key || "",
-          kid: ch.key_id || ""
+          key: firstKey,
+          kid: firstKid,
+          cookie: ch.cookie || ""
         });
       }
       if (Array.isArray(ch.sportlink)) {
         ch.sportlink.forEach((sl, idx) => {
-          const parts = sl.split(":");
+          var parts = sl.split(":");
           if (parts.length >= 2) {
             streams.push({
               id: `sportlink_${idx}`,
@@ -780,7 +838,8 @@ async function openPlayer(id, targetStreamId){
               link: ch.stream_url || "",
               type: "android",
               key: parts[1].trim(),
-              kid: parts[0].trim()
+              kid: parts[0].trim(),
+              cookie: ch.cookie || ""
             });
           }
         });
