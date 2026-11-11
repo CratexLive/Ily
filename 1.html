@@ -536,7 +536,6 @@ async function loadData(){
 
       if (channelMap.has(nameKey)) {
         var existing = channelMap.get(nameKey);
-        // Avoid duplicate link if same
         if (!existing.streams.some(s => s.link === ch.stream_url)) {
           existing.streams.push(backupStream);
         }
