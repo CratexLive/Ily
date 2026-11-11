@@ -205,7 +205,7 @@ video.video-loaded { opacity: 1; }
           <div class="pth" id="pth"></div>
         </div>
       </div>
-      <span id="duration-time">0:00</span>
+      <span id="duration-time">LIVE</span>
     </div>
 
     <div id="crow">
@@ -419,7 +419,7 @@ $vid.addEventListener('volumechange', () => {
   }
 });
 
-// ADVANCED TIMELINE SCRUBBING ENGINE WITH DYNAMIC LIVE/VOD ENDPOINTS
+// ROBUST NORMALIZED TIMELINE SCRUBBING ENGINE
 var $prog = document.getElementById("prog"), 
     $ppl = document.getElementById("ppl"), 
     $pth = document.getElementById("pth"), 
@@ -437,19 +437,28 @@ function formatTime(sec) {
 
 var isDragging = false;
 
+function getNormalizedTimes() {
+    if ($vid.seekable && $vid.seekable.length > 0) {
+        var sStart = $vid.seekable.start(0);
+        var sEnd = $vid.seekable.end($vid.seekable.length - 1);
+        // Normalize if start time is absolute Unix timestamp (> 1 Billion)
+        if (sStart > 1000000000) {
+            return { start: 0, end: sEnd - sStart, current: $vid.currentTime - sStart };
+        }
+        return { start: sStart, end: sEnd, current: $vid.currentTime };
+    }
+    return { start: 0, end: $vid.duration || 0, current: $vid.currentTime };
+}
+
 function getTimeAndPctFromEvent(e) {
     var rect = $prog.getBoundingClientRect();
     var clientX = e.touches ? e.touches[0].clientX : e.clientX;
     var clickX = clientX - rect.left;
     var pct = Math.max(0, Math.min(1, clickX / rect.width));
     
-    if ($vid.seekable && $vid.seekable.length > 0) {
-        var sStart = $vid.seekable.start(0);
-        var sEnd = $vid.seekable.end($vid.seekable.length - 1);
-        var targetTime = sStart + (pct * (sEnd - sStart));
-        return { time: targetTime, pct: pct * 100 };
-    }
-    return { time: pct * ($vid.duration || 0), pct: pct * 100 };
+    var t = getNormalizedTimes();
+    var targetTime = t.start + (pct * (t.end - t.start));
+    return { time: targetTime, relTime: targetTime - t.start, pct: pct * 100 };
 }
 
 if($prog) {
@@ -479,55 +488,51 @@ if($prog) {
 function updateScrubbing(e) {
     var data = getTimeAndPctFromEvent(e);
     if($tooltip) {
-      $tooltip.textContent = formatTime(data.time);
+      $tooltip.textContent = formatTime(data.relTime);
       $tooltip.style.left = data.pct + '%';
     }
     if (isDragging) {
         if($ppl) $ppl.style.width = data.pct + '%';
         if($pth) $pth.style.left = data.pct + '%';
-        if($currentTimeEl) $currentTimeEl.textContent = formatTime(data.time);
+        if($currentTimeEl) $currentTimeEl.textContent = formatTime(data.relTime);
     }
 }
 
-// Regular Timeupdate Sync with Endpoint Display
+// Timeupdate event for smooth playback sync
 $vid.addEventListener('timeupdate', () => {
   if (isDragging) return;
 
-  var isLive = ($vid.duration === Infinity || ($vid.seekable && $vid.seekable.length > 0 && ($vid.seekable.end(0) - $vid.seekable.start(0) > 7200)));
+  var t = getNormalizedTimes();
+  var dur = t.end - t.start;
+  var isLive = ($vid.duration === Infinity || dur > 7200);
 
-  if ($vid.seekable && $vid.seekable.length > 0) {
-      var sStart = $vid.seekable.start(0);
-      var sEnd = $vid.seekable.end($vid.seekable.length - 1);
-      var dur = sEnd - sStart;
-
-      if ($currentTimeEl) {
-          $currentTimeEl.textContent = formatTime($vid.currentTime);
+  if ($currentTimeEl) {
+      $currentTimeEl.textContent = formatTime(t.current);
+  }
+  if ($durationTimeEl) {
+      if (isLive) {
+          $durationTimeEl.innerHTML = '<span style="color:#ff3333;font-weight:bold;">LIVE</span>';
+      } else {
+          $durationTimeEl.textContent = formatTime(dur);
       }
-      if ($durationTimeEl) {
-          if (isLive) {
-              $durationTimeEl.innerHTML = '<span style="color:#ff3333;font-weight:bold;">• LIVE</span>';
-          } else {
-              $durationTimeEl.textContent = formatTime(sEnd);
-          }
-      }
+  }
 
-      if (dur > 0) {
-          var pct = (($vid.currentTime - sStart) / dur) * 100;
-          pct = Math.max(0, Math.min(100, pct));
-          if($ppl) $ppl.style.width = pct + '%'; 
-          if($pth) $pth.style.left = pct + '%';
-      }
-  } else if ($vid.duration) {
-      if ($currentTimeEl) $currentTimeEl.textContent = formatTime($vid.currentTime);
-      if ($durationTimeEl) $durationTimeEl.textContent = formatTime($vid.duration);
-
-      var pct = ($vid.currentTime / $vid.duration) * 100;
+  if (dur > 0) {
+      var pct = (t.current / dur) * 100;
+      pct = Math.max(0, Math.min(100, pct));
       if($ppl) $ppl.style.width = pct + '%'; 
       if($pth) $pth.style.left = pct + '%';
   }
 
-  if($vid.buffered.length > 0 && $vid.duration) {
-      if($pbuf) $pbuf.style.width = ($vid.buffered.end($vid.buffered.length-1) / $vid.duration) * 100 + '%';
+  if($vid.buffered.length > 0) {
+      try {
+          var bEnd = $vid.buffered.end($vid.buffered.length - 1);
+          if (bEnd > 1000000000) bEnd -= $vid.seekable.start(0);
+          if (dur > 0 && $pbuf) {
+              var bufPct = Math.min(100, (bEnd / dur) * 100);
+              $pbuf.style.width = bufPct + '%';
+          }
+      } catch(err){}
   }
 });
 
