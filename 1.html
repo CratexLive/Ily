@@ -231,7 +231,7 @@ button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;backgroun
     </div>
   </div>
 
-  <h3 class="section-title">Stream Source</h3>
+  <h3 class="section-title">Channel Sources</h3>
   <div class="streams" id="streams"></div>
 </section>
 </div>
@@ -433,37 +433,20 @@ async function loadData(){
     });
   }
 
-  // Parse SportLink TV Channels Data cleanly (Single Channel -> Single stream data)
+  // Parse SportLink TV Channels Data cleanly (Direct mapping of single channel data)
   if (channelsData && Array.isArray(channelsData.channels)) {
     state.channels = channelsData.channels.map(ch => {
       const streams = [];
       
-      // Add primary stream_url if available in channel
+      // If the channel has its own direct stream_url and key / key_id
       if (ch.stream_url) {
         streams.push({
-          id: "primary",
-          title: "Primary Server",
+          id: "main_stream",
+          title: "Main Stream",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
           key: ch.key || "",
           kid: ch.key_id || ""
-        });
-      }
-
-      // Add sportlink keys if provided in channel object
-      if (Array.isArray(ch.sportlink)) {
-        ch.sportlink.forEach((sl, idx) => {
-          const parts = sl.split(":");
-          if (parts.length >= 2) {
-            streams.push({
-              id: `sportlink_${idx}`,
-              title: `Server ${idx + 1}`,
-              link: ch.stream_url || "",
-              type: "android",
-              key: parts[1],
-              kid: parts[0]
-            });
-          }
         });
       }
 
@@ -551,13 +534,13 @@ function renderHub(){
       <img class="channel-logo" src="${esc(ch.fa)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">
       <div class="channel-info">
         <div class="channel-name">${esc(ch.title)}</div>
-        <div class="channel-status"><span class="dot"></span> Live • ${ch.streams.length} Server${ch.streams.length>1?'s':''}</div>
+        <div class="channel-status"><span class="dot"></span> Live Channel</div>
       </div>
     </div>
   `).join("");
   $("clock").textContent=new Date().toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" IST";
   return;
-}
+ }
 
  const sportFilteredEvents=state.events.filter(e=>{
   const matchSport=state.sport==="All"||e.sport===state.sport;
@@ -704,7 +687,7 @@ async function playRecord(record,index){
 }
 
 function renderPlayerStreams(activeStreamId){
- const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams were found for this channel.</p></div>';return}
+ const box=$("streams");if(!state.currentStreams.length){box.innerHTML='<div class="state" style="padding:40px 20px"><p>No streams available for this channel.</p></div>';return}
  box.innerHTML=state.currentStreams.map((s)=>{
   const isActive = s.id === activeStreamId;
   const initials = s.title.replace(/[^A-Za-z0-9]/g,"").slice(0,2).toUpperCase() || "TV";
@@ -762,27 +745,12 @@ async function openPlayer(id, targetStreamId){
       const streams = [];
       if (ch.stream_url) {
         streams.push({
-          id: "primary",
-          title: "Primary Server",
+          id: "main_stream",
+          title: "Main Stream",
           link: ch.stream_url,
           type: /\.mpd(?:\?|$)/i.test(ch.stream_url) ? "android" : "ios",
           key: ch.key || "",
           kid: ch.key_id || ""
-        });
-      }
-      if (Array.isArray(ch.sportlink)) {
-        ch.sportlink.forEach((sl, idx) => {
-          const parts = sl.split(":");
-          if (parts.length >= 2) {
-            streams.push({
-              id: `sportlink_${idx}`,
-              title: `Server ${idx + 1}`,
-              link: ch.stream_url || "",
-              type: "android",
-              key: parts[1],
-              kid: parts[0]
-            });
-          }
         });
       }
       return {
