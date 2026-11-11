@@ -376,7 +376,7 @@ function sanitizeTitle(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-// Helpers for keys parsing
+// Helpers for keys parsing (supporting sonuxs, sportlink and direct keys)
 function rawCookie(c){
   return c && c.startsWith("__hdnea__=") ? c.slice(10) : (c || "");
 }
@@ -471,10 +471,10 @@ async function loadData(){
     });
   }
 
-  // Map channels and merge Main & Backup JSON sources by channel name
+  // Map channels and merge Main (sonujson-v7) & Backup (sportlink-tv11) sources by channel name
   let channelMap = new Map();
 
-  // 1. Process Main JSON (sonujson-v7)
+  // 1. Process Main JSON
   var mainList = channelResults[0] ? (Array.isArray(channelResults[0]) ? channelResults[0] : (channelResults[0].channels || [])) : [];
   mainList.forEach(ch => {
     var nameKey = String(ch.name || "").toLowerCase().trim();
@@ -513,7 +513,7 @@ async function loadData(){
     });
   });
 
-  // 2. Process Backup JSON (sportlink-tv11) and add as Backup Server
+  // 2. Process Backup JSON and add as Backup Server
   var backupList = channelResults[1] ? (Array.isArray(channelResults[1]) ? channelResults[1] : (channelResults[1].channels || [])) : [];
   backupList.forEach(ch => {
     var nameKey = String(ch.name || "").toLowerCase().trim();
