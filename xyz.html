@@ -427,17 +427,17 @@ async function startPlayer(ch){
   player.configure({
     drm:{ clearKeys: drmKeys },
     manifest:{
-      defaultPresentationDelay: 2,
-      retryParameters:{ maxAttempts: 10, baseDelay: 1000, backoffFactor: 2, fuzzFactor: 0.5, timeout: 30000 }
+      defaultPresentationDelay: 1,
+      retryParameters:{ maxAttempts: 5, baseDelay: 500, backoffFactor: 2, fuzzFactor: 0.5, timeout: 15000 }
     },
     streaming:{
       lowLatencyMode: true,
-      bufferingGoal: 10,
-      rebufferingGoal: 2,
-      bufferBehind: 15,
+      bufferingGoal: 4,
+      rebufferingGoal: 1,
+      bufferBehind: 10,
       stallEnabled: true,
-      stallThreshold: 1,
-      retryParameters:{ maxAttempts: 10, baseDelay: 1000, backoffFactor: 2, fuzzFactor: 0.5, timeout: 30000 }
+      stallThreshold: 0.5,
+      retryParameters:{ maxAttempts: 5, baseDelay: 500, backoffFactor: 2, fuzzFactor: 0.5, timeout: 15000 }
     }
   });
 
