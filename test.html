@@ -86,7 +86,6 @@ function getStreamInfo(){
     var streamUrl = fullUrl;
     var keyId = null, key = null;
 
-    // Advanced Universal Parser for ClearKey DRM & Pipes
     if(fullUrl.indexOf("drmLicense=") !== -1){
       var baseParts = fullUrl.split(/\||\?/);
       streamUrl = baseParts[0];
@@ -134,12 +133,6 @@ function getStreamInfo(){
 function toast(msg, type, dur){
   $status.innerHTML = '<span class="st-dot"></span><span>' + msg + '</span>';
   $status.className = "show " + (type || "ok");
-  if(_stTmr) clearTimeout(_stTmr);
-  if(dur !== 0){
-    _stTmr = setTimeout(function(){
-      $status.className = $status.className.replace("show","").trim();
-    }, dur || 4000);
-  }
 }
 
 function setMsg(m){ if($loadMsg) $loadMsg.textContent = m; }
@@ -172,24 +165,35 @@ async function startPlayer(){
     seekBarColors: { base: "#828282", buffered: "#ffc336", played: "#1fc7ff" }
   });
 
-  // 🚀 Bufferless & Ultra Low-Latency Engine Configuration
+  // 🚀 INSTANT & AGGRESSIVE SPEED CONFIGURATION FOR M3U8 & MPD
   player.configure({
     streaming: {
       lowLatencyMode: true,
-      bufferingGoal: 2,
-      rebufferingGoal: 1,
-      bufferBehind: 6,
+      bufferingGoal: 1.5,        // Turant play karne ke liye sirf 1.5 second ka buffer lega
+      rebufferingGoal: 0.5,
+      bufferBehind: 4,
+      ignoreTextStreamFailures: true,
       stallEnabled: true,
-      stallThreshold: 0.5,
-      stallSkip: 0.2,
-      retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: 0.5, timeout: 20000 }
+      stallThreshold: 0.4,
+      stallSkip: 0.1,
+      inaccurateManifestTolerance: 2,
+      retryParameters: { maxAttempts: 3, baseDelay: 100, backoffFactor: 1.2, timeout: 10000 }
     },
     manifest: {
-      defaultPresentationDelay: 1,
-      dash: { ignoreMinBufferTime: true },
-      retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: 0.5, timeout: 20000 }
+      defaultPresentationDelay: 0,
+      hls: {
+        ignoreManifestProgramDateTime: true
+      },
+      dash: { 
+        ignoreMinBufferTime: true 
+      },
+      retryParameters: { maxAttempts: 3, baseDelay: 100, backoffFactor: 1.2, timeout: 10000 }
     },
-    abr: { enabled: true, switchInterval: 2, defaultBandwidthEstimate: 1500000 }
+    abr: { 
+      enabled: true, 
+      switchInterval: 1, 
+      defaultBandwidthEstimate: 3000000  // Fast initial start ke liye high bandwidth estimate
+    }
   });
 
   if(streamInfo.keyId && streamInfo.key){
@@ -198,12 +202,6 @@ async function startPlayer(){
     player.configure({ drm: { clearKeys: clearKeys } });
   }
 
-  player.addEventListener("error", function(ev){
-    var err = ev.detail;
-    console.warn("Shaka Error Code:", err.code, err);
-    toast("Reconnecting Stream...", "warn", 2000);
-  });
-
   try {
     setMsg("Loading Stream...");
     toast("Loading Stream...", "warn", 0);
@@ -211,15 +209,15 @@ async function startPlayer(){
     await player.load(streamInfo.streamUrl);
     
     hideOverlay();
-    toast("Ready — Ultra Low-Latency Active", "live", 4000);
+    toast("Live — Instant Play Active", "live", 3000);
 
     $vid.muted = true;
     $vid.play().catch(function(){});
   } catch(e){
     console.error("Load failed:", e);
     hideOverlay();
-    toast("Connection Failed — Retrying...", "err", 5000);
-    setTimeout(function(){ window.location.reload(); }, 3000);
+    toast("Connection Failed — Retrying...", "err", 4000);
+    setTimeout(function(){ window.location.reload(); }, 2000);
   }
 }
 
