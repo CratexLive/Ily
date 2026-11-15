@@ -61,7 +61,6 @@ video.mode-cover{object-fit:cover}
   <video id="v" playsinline="" webkit-playsinline="" preload="auto" autoplay="" muted="" x5-video-player-type="h5" x5-video-player-fullscreen="true"></video>
 </div>
 
-<!-- Shaka Player JS + UI -->
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.2.4/dist/shaka-player.ui.min.js"></script>
 
 <script>
@@ -69,30 +68,28 @@ video.mode-cover{object-fit:cover}
 "use strict";
 
 var $overlay = document.getElementById("overlay");
-var$loadMsg = document.getElementById("loadMsg");
+var $loadMsg = document.getElementById("loadMsg");
 var $status  = document.getElementById("status");
 var $pc      = document.getElementById("pc");
 var $vid     = document.getElementById("v");
 var _stTmr   = null;
 
 function getStreamInfo(){
-  var search = window.location.search;
-  var urlIdx = search.indexOf("url=");
+  var href = window.location.href;
+  var urlIdx = href.indexOf("url=");
   if(urlIdx === -1) return null;
 
   try {
-    var rawUrlPart = search.substring(urlIdx + 4);
-    var decoded = decodeURIComponent(rawUrlPart);
-
-    var mpdUrl = decoded;
+    var rawParam = href.substring(urlIdx + 4);
+    var mpdUrl = rawParam;
     var keyId = null, key = null;
 
-    // Handle ?|drmScheme=clearkey&drmLicense=KEYID:KEY format
-    if(decoded.indexOf("drmLicense=") !== -1){
-      var baseParts = decoded.split("?|");
-      mpdUrl = baseParts[0];
+    // Check if it contains DRM license format (?|drmScheme=clearkey&drmLicense=ID:KEY)
+    if(rawParam.indexOf("drmLicense=") !== -1){
+      var parts = rawParam.split("?|");
+      mpdUrl = parts[0];
       
-      var match = decoded.match(/drmLicense=([^&]+)/);
+      var match = rawParam.match(/drmLicense=([^&]+)/);
       if(match && match[1]){
         var licParts = match[1].split(":");
         if(licParts.length === 2){
@@ -101,31 +98,19 @@ function getStreamInfo(){
         }
       }
     } 
-    // Handle traditional pipe format: url.mpd|KEYID:KEY
-    else if(decoded.indexOf("|") !== -1) {
-      var parts = decoded.split("|");
-      mpdUrl = parts[0].replace(/\?$/, "");
+    // Pipe format support (url.mpd|ID:KEY)
+    else if(rawParam.indexOf("|") !== -1){
+      var parts = rawParam.split("|");
+      mpdUrl = parts[0];
       var keys = parts[1].split(":");
       if(keys.length === 2){
         keyId = keys[0];
         key = keys[1];
       }
     }
-    // Handle standard keys query parameter if present
-    else {
-      var params = new URLSearchParams(search);
-      var keysParam = params.get("keys");
-      if(keysParam){
-        var keyParts = decodeURIComponent(keysParam).split(":");
-        if(keyParts.length === 2){
-          keyId = keyParts[0];
-          key = keyParts[1];
-        }
-      }
-    }
 
     return {
-      streamUrl: mpdUrl.trim(),
+      streamUrl: decodeURIComponent(mpdUrl),
       keyId: keyId,
       key: key
     };
