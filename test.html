@@ -307,7 +307,7 @@ function getStreamInfo(){
     var keyId = null;
     var key = null;
 
-    // Handle ?|drmScheme=clearkey&drmLicense=KEYID:KEY format
+    // 1. Handle ClearKey DRM Format: url.mpd?|drmScheme=clearkey&drmLicense=KEYID:KEY
     if(fullUrl.indexOf("drmLicense=") !== -1){
       var parts = fullUrl.split("?|");
       mpdUrl = parts[0];
@@ -321,7 +321,7 @@ function getStreamInfo(){
         }
       }
     }
-    // Handle traditional pipe format: url.mpd|KEYID:KEY
+    // 2. Handle Traditional Pipe Format: url.mpd|KEYID:KEY
     else if(fullUrl.indexOf("|") !== -1){
       var parts = fullUrl.split("|");
       mpdUrl = parts[0].replace(/\?$/, "");
@@ -331,7 +331,7 @@ function getStreamInfo(){
         key = keys[1].trim();
       }
     }
-    // Handle standard keys query parameter if present inside the full string
+    // 3. Handle Keys Query Parameter format
     else if(fullUrl.indexOf("keys=") !== -1){
       var kMatch = fullUrl.match(/keys=([^&]+)/);
       if(kMatch && kMatch[1]){
@@ -342,6 +342,7 @@ function getStreamInfo(){
         }
       }
     }
+    // 4. Handle Direct M3U8 / MPD / Tokenized URLs (Jaise Akamai ?hdnea=...)
     else {
       return {
         mpdUrl: fullUrl.trim(),
@@ -360,6 +361,7 @@ function getStreamInfo(){
     return null;
   }
 }
+
 function getTier(){
   var mem = navigator.deviceMemory || 4;
   var cores = navigator.hardwareConcurrency || 4;
@@ -376,9 +378,9 @@ function getTier(){
 var TIER = getTier();
 
 var PROF = {
-  low:  { buf: 4,  reBuf: 1.5, behind: 10, maxH: 480,  maxBw: 1000000, bwEst: 400000 },
-  mid:  { buf: 7,  reBuf: 1.5, behind: 20, maxH: 720,  maxBw: 3000000, bwEst: 1000000 },
-  high: { buf: 10, reBuf: 1.5, behind: 25, maxH: 1080, maxBw: 0,       bwEst: 2000000 }
+  low:  { buf: 2,  reBuf: 1, behind: 6,  maxH: 480,  maxBw: 1000000, bwEst: 400000 },
+  mid:  { buf: 3,  reBuf: 1, behind: 10, maxH: 720,  maxBw: 3000000, bwEst: 1000000 },
+  high: { buf: 4,  reBuf: 1, behind: 12, maxH: 1080, maxBw: 0,       bwEst: 2000000 }
 }[TIER];
 
 function toast(msg, type, dur){
@@ -524,6 +526,7 @@ function injectControls(container, vid){
   updateRatio();
   return true;
 }
+
 async function startPlayer(){
   shaka.polyfill.installAll();
 
@@ -573,56 +576,30 @@ async function startPlayer(){
   }
 
   var restrictionsRelaxed = false;
-  var thermalApplied = false;
-  var sessionStart = Date.now();
-
-  var thermalTimer = setInterval(function(){
-    if(Date.now() - sessionStart < 60 * 60 * 1000) return;
-    clearInterval(thermalTimer);
-    if(thermalApplied) return;
-    thermalApplied = true;
-
-    try{
-      player.configure("streaming.bufferBehind", 8);
-      if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
-        player.configure("abr.restrictions.maxHeight", Math.min(PROF.maxH, 720));
-      }
-    }catch(_){}
-  }, 60000);
 
   function buildCfg(){
-    var mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    var effMaxH = thermalApplied && mobile ? Math.min(PROF.maxH, 720) : PROF.maxH;
-    var restr = {};
-
-    if(!restrictionsRelaxed){
-      if(effMaxH < 1080) restr.maxHeight = effMaxH;
-      if(PROF.maxBw > 0) restr.maxBandwidth = PROF.maxBw;
-    }
-
     return {
       manifest: {
-        defaultPresentationDelay: 4,
+        defaultPresentationDelay: 1,
         ignoreTextStreamFailures: true,
-        retryParameters: { maxAttempts: 5, baseDelay: 500, backoffFactor: 2, fuzzFactor: .5, timeout: 30000 }
+        retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: .5, timeout: 20000 }
       },
       streaming: {
-        lowLatencyMode: false,
-        bufferingGoal: PROF.buf,
+        lowLatencyMode: true,           // 🚀 Ultra Low-Latency Enabled
+        bufferingGoal: PROF.buf,        // Minimal buffer for instant start
         rebufferingGoal: PROF.reBuf,
         bufferBehind: PROF.behind,
-        safeSeekOffset: 4,
+        safeSeekOffset: 2,
         stallEnabled: true,
-        stallThreshold: 1,
-        stallSkip: .3,
+        stallThreshold: 0.5,
+        stallSkip: 0.2,
         inaccurateManifestTolerance: 0,
-        retryParameters: { maxAttempts: 5, baseDelay: 500, backoffFactor: 2, fuzzFactor: .5, timeout: 30000 }
+        retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: .5, timeout: 20000 }
       },
       abr: {
         enabled: true,
         defaultBandwidthEstimate: PROF.bwEst,
-        switchInterval: 4,
-        restrictions: restr
+        switchInterval: 2             // Fast quality adaptation
       }
     };
   }
@@ -719,7 +696,7 @@ async function startPlayer(){
     toast("Loading Stream…", "warn", 0);
     await player.load(streamInfo.mpdUrl);
     hideOverlay();
-    toast("Ready — Tap ▶ To Play", "ok", 5000);
+    toast("Ready — Low-Latency Live Active", "ok", 5000);
 
     $vid.muted = true;
     $vid.play().catch(function(){
