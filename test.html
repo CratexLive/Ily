@@ -58,7 +58,7 @@ video.mode-cover{object-fit:cover}
 <div id="status" class="show err"><span class="st-dot"></span><span>Missing or invalid stream URL.</span></div>
 
 <div id="pc">
-  <video id="v" playsinline="" webkit-playsinline="" preload="none" autoplay="" muted="" x5-video-player-type="h5" x5-video-player-fullscreen="true"></video>
+  <video id="v" playsinline="" webkit-playsinline="" preload="auto" autoplay="" muted="" x5-video-player-type="h5" x5-video-player-fullscreen="true"></video>
 </div>
 
 <!-- Shaka Player JS + UI -->
@@ -69,45 +69,68 @@ video.mode-cover{object-fit:cover}
 "use strict";
 
 var $overlay = document.getElementById("overlay");
-var $loadMsg = document.getElementById("loadMsg");
+var$loadMsg = document.getElementById("loadMsg");
 var $status  = document.getElementById("status");
 var $pc      = document.getElementById("pc");
 var $vid     = document.getElementById("v");
 var _stTmr   = null;
 
 function getStreamInfo(){
-  var params = new URLSearchParams(window.location.search);
-  var urlParam = params.get("url");
-  if(!urlParam) return null;
+  var search = window.location.search;
+  var urlIdx = search.indexOf("url=");
+  if(urlIdx === -1) return null;
 
   try {
-    var decodedUrl = decodeURIComponent(urlParam);
-    var keysParam = params.get("keys");
+    var rawUrlPart = search.substring(urlIdx + 4);
+    var decoded = decodeURIComponent(rawUrlPart);
 
+    var mpdUrl = decoded;
     var keyId = null, key = null;
-    if(keysParam){
-      var decodedKeys = decodeURIComponent(keysParam);
-      var keyParts = decodedKeys.split(":");
-      if(keyParts.length === 2){
-        keyId = keyParts[0];
-        key = keyParts[1];
+
+    // Handle ?|drmScheme=clearkey&drmLicense=KEYID:KEY format
+    if(decoded.indexOf("drmLicense=") !== -1){
+      var baseParts = decoded.split("?|");
+      mpdUrl = baseParts[0];
+      
+      var match = decoded.match(/drmLicense=([^&]+)/);
+      if(match && match[1]){
+        var licParts = match[1].split(":");
+        if(licParts.length === 2){
+          keyId = licParts[0];
+          key = licParts[1];
+        }
       }
-    } else if(decodedUrl.indexOf("|") !== -1) {
-      var parts = decodedUrl.split("|");
-      decodedUrl = parts[0].replace(/\?$/, "");
+    } 
+    // Handle traditional pipe format: url.mpd|KEYID:KEY
+    else if(decoded.indexOf("|") !== -1) {
+      var parts = decoded.split("|");
+      mpdUrl = parts[0].replace(/\?$/, "");
       var keys = parts[1].split(":");
       if(keys.length === 2){
         keyId = keys[0];
         key = keys[1];
       }
     }
+    // Handle standard keys query parameter if present
+    else {
+      var params = new URLSearchParams(search);
+      var keysParam = params.get("keys");
+      if(keysParam){
+        var keyParts = decodeURIComponent(keysParam).split(":");
+        if(keyParts.length === 2){
+          keyId = keyParts[0];
+          key = keyParts[1];
+        }
+      }
+    }
 
     return {
-      streamUrl: decodedUrl,
+      streamUrl: mpdUrl.trim(),
       keyId: keyId,
       key: key
     };
   } catch(e){
+    console.error("Parse error:", e);
     return null;
   }
 }
@@ -127,7 +150,6 @@ function setMsg(m){ if($loadMsg) $loadMsg.textContent = m; }
 function hideOverlay(){ if($overlay) $overlay.style.display = "none"; }
 
 async function startPlayer(){
-  // Polyfill initialize
   shaka.polyfill.installAll();
 
   if(!shaka.Player.isBrowserSupported()){
@@ -146,37 +168,61 @@ async function startPlayer(){
   var player = new shaka.Player();
   await player.attach($vid);
 
-  // UI Setup
   new shaka.ui.Overlay(player, $pc, $vid).configure({
     controlPanelElements: [
       "play_pause", "mute", "volume", "time_and_duration",
       "spacer", "quality", "picture_in_picture", "fullscreen", "overflow_menu"
-    ]
+    ],
+    seekBarColors: { base: "#828282", buffered: "#ffc336", played: "#1fc7ff" }
   });
 
-  // DRM configuration agar keys di gayi hain toh
+  player.configure({
+    streaming: {
+      lowLatencyMode: true,
+      bufferingGoal: 2,
+      rebufferingGoal: 1,
+      bufferBehind: 6,
+      stallEnabled: true,
+      stallThreshold: 0.5,
+      stallSkip: 0.2,
+      retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: 0.5, timeout: 20000 }
+    },
+    manifest: {
+      defaultPresentationDelay: 1,
+      dash: { ignoreMinBufferTime: true },
+      retryParameters: { maxAttempts: 10, baseDelay: 300, backoffFactor: 1.5, fuzzFactor: 0.5, timeout: 20000 }
+    },
+    abr: { enabled: true, switchInterval: 2, defaultBandwidthEstimate: 1500000 }
+  });
+
   if(streamInfo.keyId && streamInfo.key){
     var clearKeys = {};
     clearKeys[streamInfo.keyId] = streamInfo.key;
     player.configure({ drm: { clearKeys: clearKeys } });
   }
 
+  player.addEventListener("error", function(ev){
+    var err = ev.detail;
+    console.warn("Shaka Error Code:", err.code, err);
+    toast("Reconnecting Stream...", "warn", 2000);
+  });
+
   try {
     setMsg("Loading Stream...");
     toast("Loading Stream...", "warn", 0);
     
-    // Shaka automatically handles both .mpd and .m3u8 out of the box!
     await player.load(streamInfo.streamUrl);
     
     hideOverlay();
-    toast("Ready — Tap Play", "ok", 4000);
+    toast("Ready — Live Engine Active", "live", 4000);
 
     $vid.muted = true;
     $vid.play().catch(function(){});
   } catch(e){
     console.error("Load failed:", e);
     hideOverlay();
-    toast("Error loading stream", "err", 6000);
+    toast("Connection Failed — Retrying...", "err", 5000);
+    setTimeout(function(){ window.location.reload(); }, 3000);
   }
 }
 
