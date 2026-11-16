@@ -322,12 +322,8 @@ var $telemetry = document.getElementById("telemetry-panel");
 var _stTmr   = null;
 
 /**
- * Robust Universal Stream & Key Parser Engine
- * Safely extracts raw parameters without truncation from any complex format:
- * - Direct M3U8 & MPD streams
- * - Akamai Tokenized streams (?hdnea=...)
- * - ClearKey DRM embedded formats (?|drmScheme=clearkey&drmLicense=ID:KEY)
- * - Traditional pipe formats (url.mpd|KEYID:KEY)
+ * Bulletproof Universal Stream & Key Parser Engine
+ * Handles unencoded raw URLs, Akamai tokens, ClearKey DRM, and pipe keys safely.
  */
 function getStreamInfo(){
   var href = window.location.href;
@@ -338,22 +334,15 @@ function getStreamInfo(){
 
   try {
     var rawParam = href.substring(urlIdx + 4);
-    var fullUrl = rawParam;
-    try {
-      fullUrl = decodeURIComponent(rawParam);
-    } catch(err) {
-      fullUrl = rawParam;
-    }
-
-    var streamUrl = fullUrl;
+    var streamUrl = rawParam;
     var keyId = null;
     var key = null;
 
-    if(fullUrl.indexOf("drmLicense=") !== -1){
-      var baseParts = fullUrl.split(/\||\?/);
-      streamUrl = baseParts[0];
+    if(streamUrl.indexOf("drmLicense=") !== -1){
+      var baseParts = streamUrl.split(/\||\?/);
+      var targetUrl = baseParts[0];
       
-      var match = fullUrl.match(/drmLicense=([^&]+)/);
+      var match = streamUrl.match(/drmLicense=([^&]+)/);
       if(match && match[1]){
         var licParts = match[1].split(":");
         if(licParts.length === 2){
@@ -361,16 +350,17 @@ function getStreamInfo(){
           key = licParts[1].trim();
         }
       }
-    } else if(fullUrl.indexOf("|") !== -1){
-      var parts = fullUrl.split("|");
+      streamUrl = targetUrl;
+    } else if(streamUrl.indexOf("|") !== -1){
+      var parts = streamUrl.split("|");
       streamUrl = parts[0].replace(/\?$/, "");
       var keys = parts[1].split(":");
       if(keys.length === 2){
         keyId = keys[0].trim();
         key = keys[1].trim();
       }
-    } else if(fullUrl.indexOf("keys=") !== -1){
-      var kMatch = fullUrl.match(/keys=([^&]+)/);
+    } else if(streamUrl.indexOf("keys=") !== -1){
+      var kMatch = streamUrl.match(/keys=([^&]+)/);
       if(kMatch && kMatch[1]){
         var keyParts = kMatch[1].split(":");
         if(keyParts.length === 2){
@@ -378,18 +368,20 @@ function getStreamInfo(){
           key = keyParts[1].trim();
         }
       }
-    } else {
-      streamUrl = fullUrl.trim();
     }
 
+    try {
+      streamUrl = decodeURIComponent(streamUrl);
+    } catch(err) {}
+
     return {
-      streamUrl: streamUrl,
+      streamUrl: streamUrl.trim(),
       keyId: keyId,
       key: key
     };
 
   } catch(e){
-    console.error("Universal URL parse error:", e);
+    console.error("Parser crash error:", e);
     return null;
   }
 }
@@ -489,7 +481,6 @@ function injectControls(container, vid, playerInstance){
   fitBtn.setAttribute("aria-label", "Cycle Video Fit Mode");
   fitBtn.innerHTML = '<span class="fit-pill">—</span>';
 
-  // Telemetry Stats Toggle Button Plugin
   var statsBtn = document.createElement("button");
   statsBtn.className = "sp-btn";
   statsBtn.title = "Toggle Telemetry Stats";
@@ -612,12 +603,10 @@ async function startPlayer(){
     }
   })();
 
-  // Network Interceptor Plugin (Request Filter)
   shaka.net.NetworkingEngine.registerRequestFilter(function(type, request) {
     request.headers['X-Requested-With'] = 'XMLHttpRequest';
   });
 
-  // DRM ClearKey Configuration
   if(streamInfo.keyId && streamInfo.key){
     var clearKeys = {};
     clearKeys[streamInfo.keyId] = streamInfo.key;
@@ -746,7 +735,6 @@ async function startPlayer(){
     return;
   }
 
-  // Real-time Telemetry & Analytics Loop Plugin
   setInterval(function(){
     if(!player) return;
     try {
