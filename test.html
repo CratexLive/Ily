@@ -239,7 +239,7 @@ video.mode-cover{
   color:#a78bfa;
 }
 
-/* 📊 Telemetry Stats Overlay Panel */
+/* Telemetry Stats Display Panel */
 #telemetry-panel{
   position:fixed;
   top:max(60px, calc(env(safe-area-inset-top) + 46px));
@@ -294,7 +294,7 @@ video.mode-cover{
 
 <div id="status" class="show err"><span class="st-dot"></span><span>Missing or invalid stream URL.</span></div>
 
-<!-- Telemetry Stats Display -->
+<!-- Telemetry Stats Panel -->
 <div id="telemetry-panel">
   <div>BR: <span id="stat-br">0</span> kbps</div>
   <div>BUF: <span id="stat-buf">0</span> s</div>
@@ -322,8 +322,12 @@ var $telemetry = document.getElementById("telemetry-panel");
 var _stTmr   = null;
 
 /**
- * Universal Stream & Key Parser Engine
- * Handles: M3U8, MPD, Akamai Tokenized URLs, ClearKey DRM (?|drmScheme=clearkey&drmLicense=ID:KEY), Pipe format, and keys parameters.
+ * Robust Universal Stream & Key Parser Engine
+ * Safely extracts raw parameters without truncation from any complex format:
+ * - Direct M3U8 & MPD streams
+ * - Akamai Tokenized streams (?hdnea=...)
+ * - ClearKey DRM embedded formats (?|drmScheme=clearkey&drmLicense=ID:KEY)
+ * - Traditional pipe formats (url.mpd|KEYID:KEY)
  */
 function getStreamInfo(){
   var href = window.location.href;
@@ -334,7 +338,12 @@ function getStreamInfo(){
 
   try {
     var rawParam = href.substring(urlIdx + 4);
-    var fullUrl = decodeURIComponent(rawParam);
+    var fullUrl = rawParam;
+    try {
+      fullUrl = decodeURIComponent(rawParam);
+    } catch(err) {
+      fullUrl = rawParam;
+    }
 
     var streamUrl = fullUrl;
     var keyId = null;
@@ -480,7 +489,7 @@ function injectControls(container, vid, playerInstance){
   fitBtn.setAttribute("aria-label", "Cycle Video Fit Mode");
   fitBtn.innerHTML = '<span class="fit-pill">—</span>';
 
-  // 📊 Extra Plugin Button: Toggle Telemetry Stats Panel
+  // Telemetry Stats Toggle Button Plugin
   var statsBtn = document.createElement("button");
   statsBtn.className = "sp-btn";
   statsBtn.title = "Toggle Telemetry Stats";
@@ -603,9 +612,8 @@ async function startPlayer(){
     }
   })();
 
-  // 🔌 PLUGIN: Custom Network Interceptor Filter (Header Injector / Security Guard)
+  // Network Interceptor Plugin (Request Filter)
   shaka.net.NetworkingEngine.registerRequestFilter(function(type, request) {
-    // You can inject custom authorization headers or tokens dynamically here if needed
     request.headers['X-Requested-With'] = 'XMLHttpRequest';
   });
 
@@ -738,7 +746,7 @@ async function startPlayer(){
     return;
   }
 
-  // 🔌 PLUGIN: Real-time Telemetry & Analytics Loop
+  // Real-time Telemetry & Analytics Loop Plugin
   setInterval(function(){
     if(!player) return;
     try {
