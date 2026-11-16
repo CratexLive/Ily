@@ -239,6 +239,36 @@ video.mode-cover{
   color:#a78bfa;
 }
 
+/* Telemetry & Analytics Overlay Styling */
+#telemetry-panel {
+  position: fixed;
+  bottom: 60px;
+  left: 12px;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #a0aec0;
+  font-size: 11px;
+  font-family: monospace;
+  z-index: 9996;
+  backdrop-filter: blur(10px);
+  display: none;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+#telemetry-panel.visible {
+  display: block;
+}
+#telemetry-panel span {
+  color: #38bdf8;
+}
+
+/* Track Selector Menu Customizations */
+.shaka-overflow-menu button span {
+  font-size: 13px !important;
+}
+
 .shaka-controls-container button{
   color:#fff!important;
 }
@@ -274,6 +304,14 @@ video.mode-cover{
 
 <div id="status" class="show err"><span class="st-dot"></span><span>Missing or invalid stream URL.</span></div>
 
+<!-- Real-time Telemetry Analytics Monitor -->
+<div id="telemetry-panel">
+  <div>Bw: <span id="tel-bw">0</span> kbps</div>
+  <div>Buf: <span id="tel-buf">0</span> s</div>
+  <div>Dropped: <span id="tel-dropped">0</span></div>
+  <div>Res: <span id="tel-res">0x0</span></div>
+</div>
+
 <div id="pc">
   <video id="v" playsinline="" webkit-playsinline="" preload="auto" autoplay="" muted="" x5-video-player-type="h5" x5-video-player-fullscreen="true">
   </video>
@@ -286,21 +324,16 @@ video.mode-cover{
 
 "use strict";
 
-var $overlay = document.getElementById("overlay");
-var $loadMsg = document.getElementById("loadMsg");
-var $status  = document.getElementById("status");
-var $pc      = document.getElementById("pc");
-var $vid     = document.getElementById("v");
-var _stTmr   = null;
+var $overlay  = document.getElementById("overlay");
+var $loadMsg  = document.getElementById("loadMsg");
+var $status   = document.getElementById("status");
+var $pc       = document.getElementById("pc");
+var $vid      = document.getElementById("v");
+var $telPanel = document.getElementById("telemetry-panel");
+var _stTmr    = null;
 
 /**
  * Universal Stream & Key Parser Engine
- * Handles:
- * 1. Standard M3U8 & MPD streams.
- * 2. Akamai Tokenized URLs (?hdnea=...).
- * 3. ClearKey DRM with pipe or query format (url.mpd|drmScheme=clearkey&drmLicense=ID:KEY).
- * 4. Traditional Pipe format (url.mpd|KEYID:KEY).
- * 5. Explicit keys query parameter (?keys=ID:KEY).
  */
 function getStreamInfo(){
   var href = window.location.href;
@@ -317,7 +350,6 @@ function getStreamInfo(){
     var keyId = null;
     var key = null;
 
-    // Check for ClearKey DRM License format embedded in query or pipe
     if(fullUrl.indexOf("drmLicense=") !== -1){
       var baseParts = fullUrl.split(/\||\?/);
       streamUrl = baseParts[0];
@@ -331,7 +363,6 @@ function getStreamInfo(){
         }
       }
     }
-    // Check for traditional pipe separator format (URL|KEYID:KEY)
     else if(fullUrl.indexOf("|") !== -1){
       var parts = fullUrl.split("|");
       streamUrl = parts[0].replace(/\?$/, "");
@@ -341,7 +372,6 @@ function getStreamInfo(){
         key = keys[1].trim();
       }
     }
-    // Check for explicit keys parameter
     else if(fullUrl.indexOf("keys=") !== -1){
       var kMatch = fullUrl.match(/keys=([^&]+)/);
       if(kMatch && kMatch[1]){
@@ -448,7 +478,21 @@ function ratioLabel(w, h){
   return real.toFixed(2) + ":1";
 }
 
-function injectControls(container, vid){
+// 4. Custom Request Interceptor (Header Injector & Token Forwarder)
+function setupNetworkingEngine(){
+  shaka.net.NetworkingEngine.registerRequestFilter(function(type, request){
+    // Inject Custom Headers or Auth Tokens globally if specified in request URL parameters
+    var urlParams = new URLSearchParams(window.location.search);
+    var customHeaderValue = urlParams.get("token");
+    if(customHeaderValue && type === shaka.net.NetworkingEngine.RequestType.MANIFEST){
+      request.headers["Authorization"] = "Bearer " + customHeaderValue;
+    }
+    // Universal anti-CORS/Referer spoofing headers if needed
+    request.headers["X-Requested-With"] = "XMLHttpRequest";
+  });
+}
+
+function injectControls(container, vid, player){
   var panel = container.querySelector(".shaka-controls-button-panel");
   if(!panel) return false;
 
@@ -465,6 +509,40 @@ function injectControls(container, vid){
 
   if(anchor) panel.insertBefore(fitBtn, anchor);
   else panel.appendChild(fitBtn);
+
+  // 5. Picture-in-Picture (PiP) Toggle Button Integration
+  if(document.pictureInPictureEnabled){
+    var pipBtn = document.createElement("button");
+    pipBtn.className = "sp-btn";
+    pipBtn.title = "Picture-in-Picture";
+    pipBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/><path d="M11 10h8v7h-8z"/></svg>';
+    pipBtn.addEventListener("click", async function(e){
+      e.stopPropagation();
+      try {
+        if(document.pictureInPictureElement){
+          await document.exitPictureInPicture();
+        } else {
+          await vid.requestPictureInPicture();
+        }
+      } catch(err){
+        console.error("PiP error:", err);
+      }
+    });
+    if(anchor) panel.insertBefore(pipBtn, anchor);
+    else panel.appendChild(pipBtn);
+  }
+
+  // Telemetry Toggle Button
+  var telBtn = document.createElement("button");
+  telBtn.className = "sp-btn";
+  telBtn.title = "Toggle Telemetry Stats";
+  telBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>';
+  telBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    $telPanel.classList.toggle("visible");
+  });
+  if(anchor) panel.insertBefore(telBtn, anchor);
+  else panel.appendChild(telBtn);
 
   var currentRatio = "—";
 
@@ -523,12 +601,6 @@ function injectControls(container, vid){
   });
 
   vid.addEventListener("resize", updateRatio);
-
-  vid.addEventListener("timeupdate", function onFirstFrame(){
-    vid.removeEventListener("timeupdate", onFirstFrame);
-    updateRatio();
-  });
-
   updateRatio();
   return true;
 }
@@ -541,6 +613,8 @@ async function startPlayer(){
     toast("Browser Not Supported.", "err", 0);
     return;
   }
+
+  setupNetworkingEngine();
 
   var streamInfo = getStreamInfo();
 
@@ -567,7 +641,7 @@ async function startPlayer(){
 
   var injectCount = 0;
   (function tryInject(){
-    if(injectControls($pc, $vid)) return;
+    if(injectControls($pc, $vid, player)) return;
     if(++injectCount < 10){
       setTimeout(tryInject, 150);
     }
@@ -582,18 +656,13 @@ async function startPlayer(){
     player.configure({ drm: {} });
   }
 
-  // 🚀 Ultra Fast Low-Latency & Bufferless Player Engine Configuration
   function buildCfg(){
     return {
       manifest: {
         defaultPresentationDelay: 0,
         ignoreTextStreamFailures: true,
-        hls: {
-          ignoreManifestProgramDateTime: true
-        },
-        dash: {
-          ignoreMinBufferTime: true
-        },
+        hls: { ignoreManifestProgramDateTime: true },
+        dash: { ignoreMinBufferTime: true },
         retryParameters: { maxAttempts: 5, baseDelay: 200, backoffFactor: 1.5, fuzzFactor: .5, timeout: 15000 }
       },
       streaming: {
@@ -708,6 +777,16 @@ async function startPlayer(){
     return;
   }
 
+  // 2. Advanced Analytics & Performance Monitor Loop (Telemetry Stats)
+  setInterval(function(){
+    if(!player) return;
+    var stats = player.getStats();
+    document.getElementById("tel-bw").textContent = Math.round(stats.estimatedBandwidth / 1024);
+    document.getElementById("tel-buf").textContent = stats.bufferLength.toFixed(1);
+    document.getElementById("tel-dropped").textContent = stats.droppedFrames;
+    document.getElementById("tel-res").textContent = stats.width + "x" + stats.height;
+  }, 2000);
+
   function onStall(){
     if(stallTmr) return;
     toast("Buffering…", "warn", 0);
@@ -772,4 +851,6 @@ document.addEventListener("DOMContentLoaded", startPlayer);
 })();
 </script>
 
-</body></html>
+</body>
+</html>
+
