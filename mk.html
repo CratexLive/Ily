@@ -424,7 +424,6 @@ function injectControls(container, vid){
 
   var anchor = panel.querySelector(".shaka-fullscreen-button");
 
-  // 1. Fit Mode Button
   var fitIdx  = 0;
   var fitBtn  = document.createElement("button");
   fitBtn.className = "sp-btn sp-fit-btn";
@@ -432,14 +431,13 @@ function injectControls(container, vid){
   fitBtn.setAttribute("aria-label", "Cycle Video Fit Mode");
   fitBtn.innerHTML = '<span class="fit-pill">—</span>';
 
-  // 2. Screenshot Button
   var ssBtn = document.createElement("button");
   ssBtn.className = "sp-btn";
   ssBtn.title = "Take Screenshot";
   ssBtn.setAttribute("aria-label", "Take Screenshot");
   ssBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>';
 
-  ssBtn.addEventListener("click", function(e){
+  ssBtn.addEventListener("click", async function(e){
     e.stopPropagation();
     if(!vid.videoWidth || !vid.videoHeight){
       toast("Video not ready for screenshot", "warn", 2500);
@@ -449,8 +447,19 @@ function injectControls(container, vid){
       var canvas = document.createElement("canvas");
       canvas.width = vid.videoWidth;
       canvas.height = vid.videoHeight;
-      var ctx = canvas.getContext("2d");
+      var ctx = canvas.getContext("2d", { alpha: false });
+      
+      // Draw current video frame
       ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+      // Check if the canvas is completely blank (due to DRM hardware protection)
+      var pixelData = ctx.getImageData(0, 0, 1, 1).data;
+      var isBlank = (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0 && pixelData[3] === 255);
+
+      if(isBlank) {
+        toast("DRM restricted screenshot on this browser", "err", 3000);
+        return;
+      }
 
       var dataUrl = canvas.toDataURL("image/png");
       var a = document.createElement("a");
@@ -462,7 +471,7 @@ function injectControls(container, vid){
       toast("Screenshot Saved!", "live", 2500);
     } catch(err) {
       console.error(err);
-      toast("Failed to save screenshot", "err", 2500);
+      toast("Protected content: Screenshot blocked", "err", 3000);
     }
   });
 
@@ -561,15 +570,12 @@ async function startPlayer(ch){
     return;
   }
 
-  /* 🔥 ULTRA BUFFER-FREE CONFIG 🔥 */
   player.configure({
     drm:{ clearKeys: drmKeys },
     manifest:{
       defaultPresentationDelay: 2,
       ignoreTextStreamFailures: true,
-      dash: {
-        autoCorrectDrift: true
-      },
+      dash: { autoCorrectDrift: true },
       retryParameters:{maxAttempts:10,baseDelay:200,backoffFactor:1.5,fuzzFactor:.5,timeout:15000}
     },
     streaming:{
@@ -681,7 +687,7 @@ async function startPlayer(ch){
   $vid.addEventListener("stalled", onStall);
   $vid.addEventListener("playing", onPlaying);
   $vid.addEventListener("error",   function(){
-    if(!refreshing){
+    if(!refreshed){
       setTimeout(function(){ if(!refreshing) reload(); }, 300);
     }
   });
