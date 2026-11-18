@@ -177,7 +177,7 @@ video.mode-cover{object-fit:cover}
 </div>
 
 <div id="pc">
-  <video id="v" playsinline="" webkit-playsinline="" preload="auto" x5-video-player-type="h5" x5-video-player-fullscreen="true">
+  <video id="v" playsinline="" webkit-playsinline="" crossorigin="anonymous" preload="auto" x5-video-player-type="h5" x5-video-player-fullscreen="true">
   </video>
 </div>
 
@@ -449,7 +449,7 @@ function injectControls(container, vid){
       canvas.height = vid.videoHeight;
       var ctx = canvas.getContext("2d");
       
-      // Direct frame draw without strict blank error triggers
+      // Draw video frame with current presentation time
       ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
 
       var dataUrl = canvas.toDataURL("image/png");
@@ -462,7 +462,7 @@ function injectControls(container, vid){
       toast("Screenshot Saved!", "live", 2500);
     } catch(err) {
       console.error(err);
-      toast("Failed to save screenshot", "err", 2500);
+      toast("Screenshot blocked by browser security", "err", 2500);
     }
   });
 
