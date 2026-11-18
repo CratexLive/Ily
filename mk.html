@@ -437,7 +437,7 @@ function injectControls(container, vid){
   ssBtn.setAttribute("aria-label", "Take Screenshot");
   ssBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>';
 
-  ssBtn.addEventListener("click", async function(e){
+  ssBtn.addEventListener("click", function(e){
     e.stopPropagation();
     if(!vid.videoWidth || !vid.videoHeight){
       toast("Video not ready for screenshot", "warn", 2500);
@@ -447,19 +447,10 @@ function injectControls(container, vid){
       var canvas = document.createElement("canvas");
       canvas.width = vid.videoWidth;
       canvas.height = vid.videoHeight;
-      var ctx = canvas.getContext("2d", { alpha: false });
+      var ctx = canvas.getContext("2d");
       
-      // Draw current video frame
+      // Direct frame draw without strict blank error triggers
       ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-
-      // Check if the canvas is completely blank (due to DRM hardware protection)
-      var pixelData = ctx.getImageData(0, 0, 1, 1).data;
-      var isBlank = (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0 && pixelData[3] === 255);
-
-      if(isBlank) {
-        toast("DRM restricted screenshot on this browser", "err", 3000);
-        return;
-      }
 
       var dataUrl = canvas.toDataURL("image/png");
       var a = document.createElement("a");
@@ -471,7 +462,7 @@ function injectControls(container, vid){
       toast("Screenshot Saved!", "live", 2500);
     } catch(err) {
       console.error(err);
-      toast("Protected content: Screenshot blocked", "err", 3000);
+      toast("Failed to save screenshot", "err", 2500);
     }
   });
 
@@ -687,7 +678,7 @@ async function startPlayer(ch){
   $vid.addEventListener("stalled", onStall);
   $vid.addEventListener("playing", onPlaying);
   $vid.addEventListener("error",   function(){
-    if(!refreshed){
+    if(!refreshing){
       setTimeout(function(){ if(!refreshing) reload(); }, 300);
     }
   });
