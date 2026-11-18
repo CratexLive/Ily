@@ -50,9 +50,9 @@ html,body{width:100%;height:100%;background:#000;color:#fff;font-family:var(--pl
 #player{display:block;width:100%;height:100%;background:#000;object-fit:contain}
 .plyr,.plyr__video-wrapper,.plyr video{width:100%;height:100%;background:#000}
 
-.sonu-ss-control{width:36px!important;min-width:36px!important;height:36px!important;padding:0!important;display:flex!important;align-items:center;justify-content:center}
+.sonu-ss-control{width:36px!important;min-width:36px!important;height:36px!important;padding:0!important;display:flex!important;align-items:center;justify-content:center;transition:transform .15s ease,opacity .15s ease}
 .sonu-ss-control svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.sonu-ss-control:active{transform:scale(.94)}
+.sonu-ss-control:active{transform:scale(.9)}
 
 /* Live / Status Pill Badge */
 #status{
@@ -93,8 +93,9 @@ html,body{width:100%;height:100%;background:#000;color:#fff;font-family:var(--pl
 @keyframes dot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.55)}}
 
 /* Custom Buffering Overlay Spinner */
-.buffering-overlay{position:absolute;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);pointer-events:none;opacity:0;visibility:hidden;transition:opacity .15s ease,visibility .15s ease}
-.buffering-spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,.15);border-top-color:#38bdf8;border-right-color:rgba(255,255,255,.6);border-radius:50%;animation:sonu-spin .75s linear infinite}
+.buffering-overlay{position:absolute;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);pointer-events:none;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease}
+.buffering-overlay.is-visible{opacity:1;visibility:visible}
+.buffering-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:#38bdf8;border-right-color:rgba(255,255,255,.6);border-radius:50%;animation:sonu-spin .75s linear infinite}
 @keyframes sonu-spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -166,17 +167,9 @@ function getStreamSource(){
 const VIDEO_URL = getStreamSource();
 
 const CONFIG = Object.freeze({
-  retryBaseMs: 1000,
-  retryMaxMs: 16000,
-  maxRecoveryAttempts: 8,
   maxBufferLength: 30,
   backBufferLength: 30,
-  maxMaxBufferLength: 60,
-  maxBufferSize: 67108864,
-  startupTimeoutMs: 25000,
-  bufferingDelayMs: 400,
-  stallRecoveryDelayMs: 2000,
-  stallRecoveryCooldownMs: 5000
+  maxBufferSize: 67108864
 });
 
 const state = {
@@ -186,15 +179,8 @@ const state = {
   plyr: null,
   hls: null,
   src: "",
-  destroyed: false,
   usingNative: false,
-  initializing: false,
-  recoveryTimer: 0,
-  recoveryAttempts: 0,
-  sourceGeneration: 0,
-  startupTimer: 0,
-  bufferingTimer: 0,
-  stallTimer: 0
+  sourceGeneration: 0
 };
 
 function safePlay(){
@@ -207,14 +193,10 @@ function safePlay(){
 }
 
 function showBuffering(){
-  if(!state.buffering) return;
-  state.buffering.classList.add("is-visible");
+  if(state.buffering) state.buffering.classList.add("is-visible");
 }
 function hideBuffering(){
-  if(state.bufferingTimer){ clearTimeout(state.bufferingTimer); state.bufferingTimer = 0; }
-  if(state.stallTimer){ clearTimeout(state.stallTimer); state.stallTimer = 0; }
-  if(!state.buffering) return;
-  state.buffering.classList.remove("is-visible");
+  if(state.buffering) state.buffering.classList.remove("is-visible");
 }
 
 function isDirectFile(src){
@@ -254,7 +236,7 @@ function detachHls(){
   try{ inst.destroy(); }catch(_){}
 }
 
-/* Force Landscape Rotation on Fullscreen */
+/* Force Landscape Rotation & Orientation Lock on Fullscreen */
 document.addEventListener("fullscreenchange", function(){
   if(document.fullscreenElement){
     if(screen.orientation && typeof screen.orientation.lock === "function"){
@@ -273,7 +255,7 @@ function addCustomControls(){
 
   var fullscreenBtn = root.querySelector('[data-plyr="fullscreen"]');
 
-  /* Add Screenshot Control */
+  /* Add Pro Screenshot Button */
   if(!root.querySelector(".sonu-ss-control")){
     var ssBtn = document.createElement("button");
     ssBtn.type = "button";
@@ -305,7 +287,7 @@ function addCustomControls(){
         document.body.removeChild(a);
         toast("Screenshot Saved!", "live", 2500);
       } catch(err) {
-        console.error(err);
+        console.error("Screenshot error:", err);
         toast("Screenshot blocked or failed", "err", 2500);
       }
     });
@@ -382,7 +364,6 @@ function startHlsPlayback(src, gen){
 
   hls.on(window.Hls.Events.MANIFEST_PARSED, function(_, data){
     if(state.sourceGeneration !== gen) return;
-    if(state.startupTimer){ clearTimeout(state.startupTimer); state.startupTimer = 0; }
 
     var qHeights = [];
     if(data && data.levels){
